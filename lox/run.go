@@ -60,20 +60,24 @@ func RunPrompt() error {
 // private static void run(String source) {
 //   Scanner scanner = new Scanner(source);
 //   List<Token> tokens = scanner.scanTokens();
-
-//   // For now, just print the tokens.
-//   for (Token token : tokens) {
-//     System.out.println(token);
-//   }
+//   Parser parser = new Parser(tokens);
+//   Expr expression = parser.parse();
+//   // Stop if there was a syntax error.
+//   if (hadError) return;
+//
+//   System.out.println(new AstPrinter().print(expression));
 // }
 
-func run(source string) error {
+func run(source string) {
 	scanner := NewScanner(source)
 	tokens := scanner.ScanTokens()
-	for _, token := range tokens {
-		fmt.Println(token)
+	parser := NewParser(tokens)
+	expr := parser.parse()
+	// Stop if there was a syntax error.
+	if hadError {
+		return
 	}
-	return nil
+	fmt.Println(Print(expr))
 }
 
 // static void error(int line, String message) {
@@ -96,4 +100,20 @@ var hadError = false
 func reportError(line int, where, message string) {
 	fmt.Printf("[line %d] Error%s: %s\n", line, where, message)
 	hadError = true
+}
+
+// static void error(Token token, String message) {
+//   if (token.type == TokenType.EOF) {
+//     report(token.line, " at end", message);
+//   } else {
+//     report(token.line, " at '" + token.lexeme + "'", message);
+//   }
+// }
+
+func loxError(token Token, message string) {
+	if token.Type == TokenEof {
+		reportError(token.Line, " at end", message)
+	} else {
+		reportError(token.Line, fmt.Sprintf(" at %q", token.Lexeme), message)
+	}
 }
