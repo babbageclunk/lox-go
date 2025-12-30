@@ -38,10 +38,10 @@ func main() {
 	}
 	outputPath := os.Args[1] + ".go"
 	types, err := parseTypes([]string{
-		"Binary   : left Expr, operator Token, right Expr",
-		"Grouping : expression Expr",
-		"Literal  : value any",
-		"Unary    : operator Token, right Expr",
+		"Binary   : Left Expr, Operator Token, Right Expr",
+		"Grouping : Expression Expr",
+		"Literal  : Value any",
+		"Unary    : Operator Token, Right Expr",
 	})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())

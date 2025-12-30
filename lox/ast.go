@@ -10,9 +10,9 @@ type Visitor[R any] interface {
 }
 
 type Binary struct {
-	left Expr
-	operator Token
-	right Expr
+	Left Expr
+	Operator Token
+	Right Expr
 }
 
 func (Binary) kind() string {
@@ -26,7 +26,7 @@ func (b BinaryAcceptor[R]) accept(v Visitor[R]) R {
 }
 
 type Grouping struct {
-	expression Expr
+	Expression Expr
 }
 
 func (Grouping) kind() string {
@@ -40,7 +40,7 @@ func (g GroupingAcceptor[R]) accept(v Visitor[R]) R {
 }
 
 type Literal struct {
-	value any
+	Value any
 }
 
 func (Literal) kind() string {
@@ -54,8 +54,8 @@ func (l LiteralAcceptor[R]) accept(v Visitor[R]) R {
 }
 
 type Unary struct {
-	operator Token
-	right Expr
+	Operator Token
+	Right Expr
 }
 
 func (Unary) kind() string {
