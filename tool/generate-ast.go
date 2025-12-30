@@ -147,7 +147,7 @@ func defineAst(path string, baseName string, types []Type) error {
 func defineVisitor(w io.Writer, baseName string, types []Type) {
 	fmt.Fprintln(w, "type Visitor[R any] interface {")
 	for _, t := range types {
-		fmt.Fprintf(w, "\tvisit%s%s(%s %s) R\n",
+		fmt.Fprintf(w, "\tVisit%s%s(%s %s) R\n",
 			t.name, baseName, strings.ToLower(baseName), t.name)
 	}
 	fmt.Fprintln(w, "}")
@@ -202,7 +202,7 @@ func defineType(w io.Writer, baseName, typeName string, fields []Field) {
 type %[1]sAcceptor[R any] %[1]s
 
 func (%[2]s %[1]sAcceptor[R]) accept(v Visitor[R]) R {
-	return v.visit%[1]s%[3]s(%[1]s(%[2]s))
+	return v.Visit%[1]s%[3]s(%[1]s(%[2]s))
 }
 `, typeName, strings.ToLower(typeName[:1]), baseName)
 	fmt.Fprintln(w)
