@@ -3,10 +3,10 @@ package lox
 import "fmt"
 
 type Visitor[R any] interface {
-	VisitBinaryExpr(expr Binary) R
-	VisitGroupingExpr(expr Grouping) R
-	VisitLiteralExpr(expr Literal) R
-	VisitUnaryExpr(expr Unary) R
+	VisitBinaryExpr(expr Binary) (R, error)
+	VisitGroupingExpr(expr Grouping) (R, error)
+	VisitLiteralExpr(expr Literal) (R, error)
+	VisitUnaryExpr(expr Unary) (R, error)
 }
 
 type Binary struct {
@@ -21,7 +21,7 @@ func (Binary) kind() string {
 
 type BinaryAcceptor[R any] Binary
 
-func (b BinaryAcceptor[R]) accept(v Visitor[R]) R {
+func (b BinaryAcceptor[R]) accept(v Visitor[R]) (R, error) {
 	return v.VisitBinaryExpr(Binary(b))
 }
 
@@ -35,7 +35,7 @@ func (Grouping) kind() string {
 
 type GroupingAcceptor[R any] Grouping
 
-func (g GroupingAcceptor[R]) accept(v Visitor[R]) R {
+func (g GroupingAcceptor[R]) accept(v Visitor[R]) (R, error) {
 	return v.VisitGroupingExpr(Grouping(g))
 }
 
@@ -49,7 +49,7 @@ func (Literal) kind() string {
 
 type LiteralAcceptor[R any] Literal
 
-func (l LiteralAcceptor[R]) accept(v Visitor[R]) R {
+func (l LiteralAcceptor[R]) accept(v Visitor[R]) (R, error) {
 	return v.VisitLiteralExpr(Literal(l))
 }
 
@@ -64,7 +64,7 @@ func (Unary) kind() string {
 
 type UnaryAcceptor[R any] Unary
 
-func (u UnaryAcceptor[R]) accept(v Visitor[R]) R {
+func (u UnaryAcceptor[R]) accept(v Visitor[R]) (R, error) {
 	return v.VisitUnaryExpr(Unary(u))
 }
 

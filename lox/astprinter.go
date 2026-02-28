@@ -13,7 +13,7 @@ import (
 
 type AstPrinter struct{}
 
-func Print(expr Expr) string {
+func Print(expr Expr) (string, error) {
 	return Accept(expr, AstPrinter{})
 }
 
@@ -23,7 +23,7 @@ func Print(expr Expr) string {
 //                       expr.left, expr.right);
 // }
 
-func (p AstPrinter) VisitBinaryExpr(expr Binary) string {
+func (p AstPrinter) VisitBinaryExpr(expr Binary) (string, error) {
 	return p.parenthesize(expr.Operator.Lexeme, expr.Left, expr.Right)
 }
 
@@ -32,7 +32,7 @@ func (p AstPrinter) VisitBinaryExpr(expr Binary) string {
 //   return parenthesize("group", expr.expression);
 // }
 
-func (p AstPrinter) VisitGroupingExpr(expr Grouping) string {
+func (p AstPrinter) VisitGroupingExpr(expr Grouping) (string, error) {
 	return p.parenthesize("group", expr.Expression)
 }
 
@@ -42,11 +42,11 @@ func (p AstPrinter) VisitGroupingExpr(expr Grouping) string {
 //   return expr.value.toString();
 // }
 
-func (p AstPrinter) VisitLiteralExpr(expr Literal) string {
+func (p AstPrinter) VisitLiteralExpr(expr Literal) (string, error) {
 	if expr.Value == nil {
-		return "nil"
+		return "nil", nil
 	}
-	return fmt.Sprint(expr.Value)
+	return fmt.Sprint(expr.Value), nil
 }
 
 // @Override
@@ -54,7 +54,7 @@ func (p AstPrinter) VisitLiteralExpr(expr Literal) string {
 //   return parenthesize(expr.operator.lexeme, expr.right);
 // }
 
-func (p AstPrinter) VisitUnaryExpr(expr Unary) string {
+func (p AstPrinter) VisitUnaryExpr(expr Unary) (string, error) {
 	return p.parenthesize(expr.Operator.Lexeme, expr.Right)
 }
 
@@ -71,14 +71,18 @@ func (p AstPrinter) VisitUnaryExpr(expr Unary) string {
 //   return builder.toString();
 // }
 
-func (p AstPrinter) parenthesize(name string, exprs ...Expr) string {
+func (p AstPrinter) parenthesize(name string, exprs ...Expr) (string, error) {
 	var b strings.Builder
 	b.WriteString("(")
 	b.WriteString(name)
 	for _, expr := range exprs {
 		b.WriteString(" ")
-		b.WriteString(Accept(expr, p))
+		res, err := Accept(expr, p)
+		if err != nil {
+			return "", err
+		}
+		b.WriteString(res)
 	}
 	b.WriteString(")")
-	return b.String()
+	return b.String(), nil
 }

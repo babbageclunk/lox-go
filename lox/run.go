@@ -77,7 +77,12 @@ func run(source string) {
 	if hadError {
 		return
 	}
-	fmt.Println(Print(expr))
+	res, err := Print(expr)
+	if err != nil {
+		fmt.Println("err:", err)
+	} else {
+		fmt.Println(res)
+	}
 }
 
 // static void error(int line, String message) {
