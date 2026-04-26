@@ -13,12 +13,31 @@ func (i Interpreter) VisitUnaryExpr(expr Unary) (any, error) {
 	}
 	switch expr.Operator.Type {
 	case TokenMinus:
+		if err := i.checkNumberOperand(expr.Operator, right); err != nil {
+			return nil, err
+		}
 		return -(right.(float64)), nil
 	case TokenBang:
 		return !i.isTruthy(right), nil
 	}
 	// Unreachable.
 	return nil, nil
+}
+
+func (i Interpreter) checkNumberOperand(operator Token, operand any) error {
+	if _, ok := operand.(float64); !ok {
+		return newTokenError(operator, "Operand must be a number.")
+	}
+	return nil
+}
+
+func (i Interpreter) checkNumberOperands(operator Token, left, right any) error {
+	_, leftOk := left.(float64)
+	_, rightOk := right.(float64)
+	if !leftOk || !rightOk {
+		return newTokenError(operator, "Operands must be numbers.")
+	}
+	return nil
 }
 
 func (i Interpreter) isTruthy(val any) bool {
@@ -56,18 +75,39 @@ func (i Interpreter) VisitBinaryExpr(expr Binary) (any, error) {
 	}
 	switch expr.Operator.Type {
 	case TokenGreater:
+		if err := i.checkNumberOperands(expr.Operator, left, right); err != nil {
+			return nil, err
+		}
 		return left.(float64) > right.(float64), nil
 	case TokenGreaterEqual:
+		if err := i.checkNumberOperands(expr.Operator, left, right); err != nil {
+			return nil, err
+		}
 		return left.(float64) >= right.(float64), nil
 	case TokenLess:
+		if err := i.checkNumberOperands(expr.Operator, left, right); err != nil {
+			return nil, err
+		}
 		return left.(float64) < right.(float64), nil
 	case TokenLessEqual:
+		if err := i.checkNumberOperands(expr.Operator, left, right); err != nil {
+			return nil, err
+		}
 		return left.(float64) <= right.(float64), nil
 	case TokenMinus:
+		if err := i.checkNumberOperands(expr.Operator, left, right); err != nil {
+			return nil, err
+		}
 		return left.(float64) - right.(float64), nil
 	case TokenSlash:
+		if err := i.checkNumberOperands(expr.Operator, left, right); err != nil {
+			return nil, err
+		}
 		return left.(float64) / right.(float64), nil
 	case TokenStar:
+		if err := i.checkNumberOperands(expr.Operator, left, right); err != nil {
+			return nil, err
+		}
 		return left.(float64) * right.(float64), nil
 	case TokenPlus:
 		lFloat, lIsFloat := left.(float64)
@@ -80,6 +120,7 @@ func (i Interpreter) VisitBinaryExpr(expr Binary) (any, error) {
 		if lIsStr && rIsStr {
 			return lStr + rStr, nil
 		}
+		return nil, newTokenError(expr.Operator, "Operands must be two numbers or two strings.")
 	case TokenBangEqual:
 		return !i.isEqual(left, right), nil
 	case TokenEqualEqual:
