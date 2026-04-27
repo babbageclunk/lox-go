@@ -133,6 +133,10 @@ func (i Interpreter) VisitBinaryExpr(expr Binary) (any, error) {
 		if err := i.checkNumberOperands(expr.Operator, left, right); err != nil {
 			return nil, err
 		}
+		denominator := right.(float64)
+		if denominator == 0 {
+			return nil, newTokenError(expr.Operator, "Division by zero.")
+		}
 		return left.(float64) / right.(float64), nil
 	case TokenStar:
 		if err := i.checkNumberOperands(expr.Operator, left, right); err != nil {
