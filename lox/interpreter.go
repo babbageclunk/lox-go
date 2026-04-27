@@ -1,6 +1,36 @@
 package lox
 
+import (
+	"fmt"
+	"strconv"
+	"strings"
+)
+
 type Interpreter struct{}
+
+func (i Interpreter) Interpret(expr Expr) {
+	result, err := i.Evaluate(expr)
+	if err != nil {
+		runtimeError(err)
+		return
+	}
+	fmt.Println(stringify(result))
+}
+
+func stringify(val any) string {
+	if val == nil {
+		return "nil"
+	}
+	if fval, ok := val.(float64); ok {
+		str := strconv.FormatFloat(fval, 'f', -1, 64)
+		if strings.HasSuffix(str, ".0") {
+			str = str[:len(str)-2]
+		}
+		return str
+	}
+
+	return fmt.Sprintf("%s", val)
+}
 
 func (i Interpreter) VisitLiteralExpr(expr Literal) (any, error) {
 	return expr.Value, nil

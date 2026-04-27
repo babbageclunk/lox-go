@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/rotisserie/eris"
 )
 
 // private static void runFile(String path) throws IOException {
@@ -24,6 +26,9 @@ func RunFile(path string) error {
 	run(string(bytes))
 	if hadError {
 		os.Exit(65)
+	}
+	if hadRuntimeError {
+		os.Exit(70)
 	}
 	return nil
 }
@@ -68,6 +73,8 @@ func RunPrompt() error {
 //   System.out.println(new AstPrinter().print(expression));
 // }
 
+var interpreter Interpreter
+
 func run(source string) {
 	scanner := NewScanner(source)
 	tokens := scanner.ScanTokens()
@@ -77,12 +84,8 @@ func run(source string) {
 	if hadError {
 		return
 	}
-	res, err := Print(expr)
-	if err != nil {
-		fmt.Println("err:", err)
-	} else {
-		fmt.Println(res)
-	}
+
+	interpreter.Interpret(expr)
 }
 
 // static void error(int line, String message) {
@@ -100,11 +103,24 @@ func report(line int, message string) {
 	reportError(line, "", message)
 }
 
-var hadError = false
+var (
+	hadError        = false
+	hadRuntimeError = false
+)
 
 func reportError(line int, where, message string) {
 	fmt.Printf("[line %d] Error%s: %s\n", line, where, message)
 	hadError = true
+}
+
+func runtimeError(err error) {
+	var tErr tokenError
+	if eris.As(err, &tErr) {
+		fmt.Fprintf(os.Stderr, "[line %d] Error: %s\n", tErr.token.Line, err.Error())
+	} else {
+		fmt.Fprintln(os.Stderr, err.Error())
+	}
+	hadRuntimeError = true
 }
 
 // static void error(Token token, String message) {
