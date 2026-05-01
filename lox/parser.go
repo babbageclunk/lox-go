@@ -79,7 +79,7 @@ func (p *Parser) equality() Expr {
 	for p.match(TokenBangEqual, TokenEqualEqual) {
 		operator := p.previous()
 		right := p.comparison()
-		expr = Binary{
+		expr = BinaryExpr{
 			Left:     expr,
 			Operator: operator,
 			Right:    right,
@@ -105,7 +105,7 @@ func (p *Parser) comparison() Expr {
 	for p.match(TokenGreater, TokenGreaterEqual, TokenLess, TokenLessEqual) {
 		operator := p.previous()
 		right := p.term()
-		expr = Binary{
+		expr = BinaryExpr{
 			Left:     expr,
 			Operator: operator,
 			Right:    right,
@@ -131,7 +131,7 @@ func (p *Parser) term() Expr {
 	for p.match(TokenMinus, TokenPlus) {
 		operator := p.previous()
 		right := p.factor()
-		expr = Binary{
+		expr = BinaryExpr{
 			Left:     expr,
 			Operator: operator,
 			Right:    right,
@@ -157,7 +157,7 @@ func (p *Parser) factor() Expr {
 	for p.match(TokenSlash, TokenStar) {
 		operator := p.previous()
 		right := p.unary()
-		expr = Binary{
+		expr = BinaryExpr{
 			Left:     expr,
 			Operator: operator,
 			Right:    right,
@@ -180,7 +180,7 @@ func (p *Parser) unary() Expr {
 	if p.match(TokenBang, TokenMinus) {
 		operator := p.previous()
 		right := p.unary()
-		return Unary{
+		return UnaryExpr{
 			Operator: operator,
 			Right:    right,
 		}
@@ -208,17 +208,17 @@ func (p *Parser) unary() Expr {
 func (p *Parser) primary() Expr {
 	switch {
 	case p.match(TokenFalse):
-		return Literal{Value: false}
+		return LiteralExpr{Value: false}
 	case p.match(TokenTrue):
-		return Literal{Value: true}
+		return LiteralExpr{Value: true}
 	case p.match(TokenNil):
-		return Literal{Value: nil}
+		return LiteralExpr{Value: nil}
 	case p.match(TokenNumber, TokenString):
-		return Literal{Value: p.previous().Literal}
+		return LiteralExpr{Value: p.previous().Literal}
 	case p.match(TokenLeftParen):
 		expr := p.expression()
 		p.consume(TokenRightParen, "Expect ')' after expression.")
-		return Grouping{Expression: expr}
+		return GroupingExpr{Expression: expr}
 	}
 	panic(p.error(p.peek(), "Expect expression."))
 }

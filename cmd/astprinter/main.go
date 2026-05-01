@@ -19,19 +19,19 @@ import (
 // }
 
 func main() {
-	expr := lox.Binary{
-		Left: lox.Unary{
+	expr := lox.BinaryExpr{
+		Left: lox.UnaryExpr{
 			Operator: lox.Token{
 				Type:   lox.TokenMinus,
 				Lexeme: "-",
 			},
-			Right: lox.Literal{Value: 123},
+			Right: lox.LiteralExpr{Value: 123},
 		},
 		Operator: lox.Token{
 			Type:   lox.TokenStar,
 			Lexeme: "*",
 		},
-		Right: lox.Grouping{Expression: lox.Literal{Value: 45.67}},
+		Right: lox.GroupingExpr{Expression: lox.LiteralExpr{Value: 45.67}},
 	}
-	fmt.Println(lox.Print(expr))
+	fmt.Println(lox.AstPrinter{}.Print(expr))
 }

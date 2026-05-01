@@ -13,8 +13,8 @@ import (
 
 type AstPrinter struct{}
 
-func Print(expr Expr) (string, error) {
-	return Accept(expr, AstPrinter{})
+func (AstPrinter) Print(expr Expr) (string, error) {
+	return AcceptExpr(expr, AstPrinter{})
 }
 
 // @Override
@@ -23,7 +23,7 @@ func Print(expr Expr) (string, error) {
 //                       expr.left, expr.right);
 // }
 
-func (p AstPrinter) VisitBinaryExpr(expr Binary) (string, error) {
+func (p AstPrinter) VisitBinaryExpr(expr BinaryExpr) (string, error) {
 	return p.parenthesize(expr.Operator.Lexeme, expr.Left, expr.Right)
 }
 
@@ -32,7 +32,7 @@ func (p AstPrinter) VisitBinaryExpr(expr Binary) (string, error) {
 //   return parenthesize("group", expr.expression);
 // }
 
-func (p AstPrinter) VisitGroupingExpr(expr Grouping) (string, error) {
+func (p AstPrinter) VisitGroupingExpr(expr GroupingExpr) (string, error) {
 	return p.parenthesize("group", expr.Expression)
 }
 
@@ -42,7 +42,7 @@ func (p AstPrinter) VisitGroupingExpr(expr Grouping) (string, error) {
 //   return expr.value.toString();
 // }
 
-func (p AstPrinter) VisitLiteralExpr(expr Literal) (string, error) {
+func (p AstPrinter) VisitLiteralExpr(expr LiteralExpr) (string, error) {
 	if expr.Value == nil {
 		return "nil", nil
 	}
@@ -54,7 +54,7 @@ func (p AstPrinter) VisitLiteralExpr(expr Literal) (string, error) {
 //   return parenthesize(expr.operator.lexeme, expr.right);
 // }
 
-func (p AstPrinter) VisitUnaryExpr(expr Unary) (string, error) {
+func (p AstPrinter) VisitUnaryExpr(expr UnaryExpr) (string, error) {
 	return p.parenthesize(expr.Operator.Lexeme, expr.Right)
 }
 
@@ -77,7 +77,7 @@ func (p AstPrinter) parenthesize(name string, exprs ...Expr) (string, error) {
 	b.WriteString(name)
 	for _, expr := range exprs {
 		b.WriteString(" ")
-		res, err := Accept(expr, p)
+		res, err := AcceptExpr(expr, p)
 		if err != nil {
 			return "", err
 		}

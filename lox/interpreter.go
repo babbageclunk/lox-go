@@ -32,11 +32,11 @@ func stringify(val any) string {
 	return fmt.Sprintf("%s", val)
 }
 
-func (i Interpreter) VisitLiteralExpr(expr Literal) (any, error) {
+func (i Interpreter) VisitLiteralExpr(expr LiteralExpr) (any, error) {
 	return expr.Value, nil
 }
 
-func (i Interpreter) VisitUnaryExpr(expr Unary) (any, error) {
+func (i Interpreter) VisitUnaryExpr(expr UnaryExpr) (any, error) {
 	right, err := i.Evaluate(expr.Right)
 	if err != nil {
 		return nil, err
@@ -90,11 +90,11 @@ func (i Interpreter) isEqual(a, b any) bool {
 	return a == b
 }
 
-func (i Interpreter) VisitGroupingExpr(expr Grouping) (any, error) {
+func (i Interpreter) VisitGroupingExpr(expr GroupingExpr) (any, error) {
 	return i.Evaluate(expr.Expression)
 }
 
-func (i Interpreter) VisitBinaryExpr(expr Binary) (any, error) {
+func (i Interpreter) VisitBinaryExpr(expr BinaryExpr) (any, error) {
 	left, err := i.Evaluate(expr.Left)
 	if err != nil {
 		return nil, err
@@ -165,5 +165,5 @@ func (i Interpreter) VisitBinaryExpr(expr Binary) (any, error) {
 }
 
 func (i Interpreter) Evaluate(expr Expr) (any, error) {
-	return Accept(expr, i)
+	return AcceptExpr(expr, i)
 }

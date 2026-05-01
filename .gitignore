@@ -5,3 +5,4 @@ syntax:glob
 tramp
 *.elc
 lox-go
+astprinter
