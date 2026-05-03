@@ -7,6 +7,7 @@ type ExprVisitor[R any] interface {
 	VisitGroupingExpr(expr GroupingExpr) (R, error)
 	VisitLiteralExpr(expr LiteralExpr) (R, error)
 	VisitUnaryExpr(expr UnaryExpr) (R, error)
+	VisitVariableExpr(expr VariableExpr) (R, error)
 }
 
 type BinaryExpr struct {
@@ -21,8 +22,8 @@ func (BinaryExpr) eKind() string {
 
 type BinaryExprAcceptor[R any] BinaryExpr
 
-func (b BinaryExprAcceptor[R]) accept(v ExprVisitor[R]) (R, error) {
-	return v.VisitBinaryExpr(BinaryExpr(b))
+func (b BinaryExprAcceptor[R]) accept(vis ExprVisitor[R]) (R, error) {
+	return vis.VisitBinaryExpr(BinaryExpr(b))
 }
 
 type GroupingExpr struct {
@@ -35,8 +36,8 @@ func (GroupingExpr) eKind() string {
 
 type GroupingExprAcceptor[R any] GroupingExpr
 
-func (g GroupingExprAcceptor[R]) accept(v ExprVisitor[R]) (R, error) {
-	return v.VisitGroupingExpr(GroupingExpr(g))
+func (g GroupingExprAcceptor[R]) accept(vis ExprVisitor[R]) (R, error) {
+	return vis.VisitGroupingExpr(GroupingExpr(g))
 }
 
 type LiteralExpr struct {
@@ -49,8 +50,8 @@ func (LiteralExpr) eKind() string {
 
 type LiteralExprAcceptor[R any] LiteralExpr
 
-func (l LiteralExprAcceptor[R]) accept(v ExprVisitor[R]) (R, error) {
-	return v.VisitLiteralExpr(LiteralExpr(l))
+func (l LiteralExprAcceptor[R]) accept(vis ExprVisitor[R]) (R, error) {
+	return vis.VisitLiteralExpr(LiteralExpr(l))
 }
 
 type UnaryExpr struct {
@@ -64,8 +65,22 @@ func (UnaryExpr) eKind() string {
 
 type UnaryExprAcceptor[R any] UnaryExpr
 
-func (u UnaryExprAcceptor[R]) accept(v ExprVisitor[R]) (R, error) {
-	return v.VisitUnaryExpr(UnaryExpr(u))
+func (u UnaryExprAcceptor[R]) accept(vis ExprVisitor[R]) (R, error) {
+	return vis.VisitUnaryExpr(UnaryExpr(u))
+}
+
+type VariableExpr struct {
+	Name Token
+}
+
+func (VariableExpr) eKind() string {
+	return "VariableExpr"
+}
+
+type VariableExprAcceptor[R any] VariableExpr
+
+func (v VariableExprAcceptor[R]) accept(vis ExprVisitor[R]) (R, error) {
+	return vis.VisitVariableExpr(VariableExpr(v))
 }
 
 func asExprAcceptor[R any](expr Expr) ExprAcceptor[R] {
@@ -78,6 +93,8 @@ func asExprAcceptor[R any](expr Expr) ExprAcceptor[R] {
 		return LiteralExprAcceptor[R](e)
 	case UnaryExpr:
 		return UnaryExprAcceptor[R](e)
+	case VariableExpr:
+		return VariableExprAcceptor[R](e)
 	}
 	panic(fmt.Errorf("no acceptor for expr %s", expr.eKind()))
 }

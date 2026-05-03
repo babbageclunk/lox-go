@@ -44,6 +44,7 @@ func main() {
 		"Grouping : Expression Expr",
 		"Literal  : Value any",
 		"Unary    : Operator Token, Right Expr",
+		"Variable : Name Token",
 	})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
@@ -52,6 +53,7 @@ func main() {
 	err = defineAst(baseFilename+"-stmt.go", "Stmt", []string{
 		"Expression : Expression Expr",
 		"Print      : Expression Expr",
+		"Var        : Name Token, Initializer Expr",
 	})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
@@ -211,8 +213,8 @@ func defineType(w io.Writer, baseName, typeName string, fields []Field) {
 	fmt.Fprintf(w, `
 type %[1]sAcceptor[R any] %[1]s
 
-func (%[2]s %[1]sAcceptor[R]) accept(v %[3]sVisitor[R]) (R, error) {
-	return v.Visit%[1]s(%[1]s(%[2]s))
+func (%[2]s %[1]sAcceptor[R]) accept(vis %[3]sVisitor[R]) (R, error) {
+	return vis.Visit%[1]s(%[1]s(%[2]s))
 }
 `, typeName, strings.ToLower(typeName[:1]), baseName)
 	fmt.Fprintln(w)
