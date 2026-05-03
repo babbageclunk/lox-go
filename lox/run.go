@@ -79,13 +79,13 @@ func run(source string) {
 	scanner := NewScanner(source)
 	tokens := scanner.ScanTokens()
 	parser := NewParser(tokens)
-	expr := parser.parse()
+	statements := parser.parse()
 	// Stop if there was a syntax error.
 	if hadError {
 		return
 	}
 
-	interpreter.Interpret(expr)
+	interpreter.Interpret(statements)
 }
 
 // static void error(int line, String message) {

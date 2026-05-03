@@ -8,13 +8,13 @@ import (
 
 type Interpreter struct{}
 
-func (i Interpreter) Interpret(expr Expr) {
-	result, err := i.Evaluate(expr)
-	if err != nil {
-		runtimeError(err)
-		return
+func (i Interpreter) Interpret(statements []Stmt) {
+	for _, statement := range statements {
+		if err := i.Execute(statement); err != nil {
+			runtimeError(err)
+			return
+		}
 	}
-	fmt.Println(stringify(result))
 }
 
 func stringify(val any) string {
@@ -29,7 +29,7 @@ func stringify(val any) string {
 		return str
 	}
 
-	return fmt.Sprintf("%s", val)
+	return fmt.Sprintf("%v", val)
 }
 
 func (i Interpreter) VisitLiteralExpr(expr LiteralExpr) (any, error) {
@@ -166,4 +166,29 @@ func (i Interpreter) VisitBinaryExpr(expr BinaryExpr) (any, error) {
 
 func (i Interpreter) Evaluate(expr Expr) (any, error) {
 	return AcceptExpr(expr, i)
+}
+
+func (i Interpreter) Execute(stmt Stmt) error {
+	_, err := AcceptStmt(stmt, i)
+	return err
+}
+
+type Void struct{}
+
+var void Void
+
+func (i Interpreter) VisitExpressionStmt(stmt ExpressionStmt) (Void, error) {
+	if _, err := i.Evaluate(stmt.Expression); err != nil {
+		return void, err
+	}
+	return void, nil
+}
+
+func (i Interpreter) VisitPrintStmt(stmt PrintStmt) (Void, error) {
+	value, err := i.Evaluate(stmt.Expression)
+	if err != nil {
+		return void, err
+	}
+	fmt.Println(stringify(value))
+	return void, nil
 }

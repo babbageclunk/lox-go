@@ -35,22 +35,11 @@ func NewParser(tokens []Token) *Parser {
 //   }
 // }
 
-func (p *Parser) parse() (e Expr) {
-	defer func() {
-		val := recover()
-		if val == nil {
-			return
-		}
-		err, ok := val.(error)
-		if !ok {
-			panic(val)
-		}
-		if !errors.Is(err, ParseError) {
-			panic(err)
-		}
-		e = nil
-	}()
-	return p.expression()
+func (p *Parser) parse() (statements []Stmt) {
+	for !p.isAtEnd() {
+		statements = append(statements, p.statement())
+	}
+	return statements
 }
 
 // private Expr expression() {
@@ -59,6 +48,25 @@ func (p *Parser) parse() (e Expr) {
 
 func (p *Parser) expression() Expr {
 	return p.equality()
+}
+
+func (p *Parser) statement() Stmt {
+	if p.match(TokenPrint) {
+		return p.printStatement()
+	}
+	return p.expressionStatement()
+}
+
+func (p *Parser) printStatement() Stmt {
+	value := p.expression()
+	p.consume(TokenSemicolon, "Expect ';' after value.")
+	return PrintStmt{Expression: value}
+}
+
+func (p *Parser) expressionStatement() Stmt {
+	expr := p.expression()
+	p.consume(TokenSemicolon, "Expect ';' after expression.")
+	return ExpressionStmt{Expression: expr}
 }
 
 // private Expr equality() {
