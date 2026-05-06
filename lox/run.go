@@ -73,7 +73,7 @@ func RunPrompt() error {
 //   System.out.println(new AstPrinter().print(expression));
 // }
 
-var interpreter Interpreter
+var interpreter = NewInterpreter()
 
 func run(source string) {
 	scanner := NewScanner(source)

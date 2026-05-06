@@ -6,7 +6,15 @@ import (
 	"strings"
 )
 
-type Interpreter struct{}
+type Interpreter struct {
+	environment Environment
+}
+
+func NewInterpreter() Interpreter {
+	return Interpreter{
+		environment: NewEnvironment(),
+	}
+}
 
 func (i Interpreter) Interpret(statements []Stmt) {
 	for _, statement := range statements {
@@ -52,6 +60,10 @@ func (i Interpreter) VisitUnaryExpr(expr UnaryExpr) (any, error) {
 	}
 	// Unreachable.
 	return nil, nil
+}
+
+func (i Interpreter) VisitVariableExpr(expr VariableExpr) (any, error) {
+	return i.environment.get(expr.Name)
 }
 
 func (i Interpreter) checkNumberOperand(operator Token, operand any) error {
@@ -190,5 +202,19 @@ func (i Interpreter) VisitPrintStmt(stmt PrintStmt) (Void, error) {
 		return void, err
 	}
 	fmt.Println(stringify(value))
+	return void, nil
+}
+
+func (i Interpreter) VisitVarStmt(stmt VarStmt) (Void, error) {
+	var value any
+	if stmt.Initializer != nil {
+		var err error
+		value, err = i.Evaluate(stmt.Initializer)
+		if err != nil {
+			return void, err
+		}
+	}
+
+	i.environment.define(stmt.Name.Lexeme, value)
 	return void, nil
 }

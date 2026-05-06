@@ -37,7 +37,7 @@ func NewParser(tokens []Token) *Parser {
 
 func (p *Parser) parse() (statements []Stmt) {
 	for !p.isAtEnd() {
-		statements = append(statements, p.statement())
+		statements = append(statements, p.declaration())
 	}
 	return statements
 }
@@ -48,6 +48,25 @@ func (p *Parser) parse() (statements []Stmt) {
 
 func (p *Parser) expression() Expr {
 	return p.equality()
+}
+
+func (p *Parser) declaration() (result Stmt) {
+	defer func() {
+		val := recover()
+		if val == nil {
+			return
+		}
+		if err, _ := val.(error); errors.Is(err, ParseError) {
+			p.synchronize()
+			result = nil
+			return
+		}
+		panic(val)
+	}()
+	if p.match(TokenVar) {
+		return p.varDeclaration()
+	}
+	return p.statement()
 }
 
 func (p *Parser) statement() Stmt {
@@ -61,6 +80,18 @@ func (p *Parser) printStatement() Stmt {
 	value := p.expression()
 	p.consume(TokenSemicolon, "Expect ';' after value.")
 	return PrintStmt{Expression: value}
+}
+
+func (p *Parser) varDeclaration() Stmt {
+	name := p.consume(TokenIdentifier, "Expect variable name.")
+
+	var initializer Expr
+	if p.match(TokenEqual) {
+		initializer = p.expression()
+	}
+
+	p.consume(TokenSemicolon, "Expect ';' after variable declaration.")
+	return VarStmt{Name: name, Initializer: initializer}
 }
 
 func (p *Parser) expressionStatement() Stmt {
@@ -221,6 +252,8 @@ func (p *Parser) primary() Expr {
 		return LiteralExpr{Value: true}
 	case p.match(TokenNil):
 		return LiteralExpr{Value: nil}
+	case p.match(TokenIdentifier):
+		return VariableExpr{Name: p.previous()}
 	case p.match(TokenNumber, TokenString):
 		return LiteralExpr{Value: p.previous().Literal}
 	case p.match(TokenLeftParen):

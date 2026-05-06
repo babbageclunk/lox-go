@@ -58,6 +58,10 @@ func (p AstPrinter) VisitUnaryExpr(expr UnaryExpr) (string, error) {
 	return p.parenthesize(expr.Operator.Lexeme, expr.Right)
 }
 
+func (p AstPrinter) VisitVariableExpr(expr VariableExpr) (string, error) {
+	return p.parenthesize("var", expr)
+}
+
 // private String parenthesize(String name, Expr... exprs) {
 //   StringBuilder builder = new StringBuilder();
 
