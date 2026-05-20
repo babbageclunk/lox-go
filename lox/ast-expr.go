@@ -3,11 +3,27 @@ package lox
 import "fmt"
 
 type ExprVisitor[R any] interface {
+	VisitAssignExpr(expr AssignExpr) (R, error)
 	VisitBinaryExpr(expr BinaryExpr) (R, error)
 	VisitGroupingExpr(expr GroupingExpr) (R, error)
 	VisitLiteralExpr(expr LiteralExpr) (R, error)
 	VisitUnaryExpr(expr UnaryExpr) (R, error)
 	VisitVariableExpr(expr VariableExpr) (R, error)
+}
+
+type AssignExpr struct {
+	Name Token
+	Value Expr
+}
+
+func (AssignExpr) eKind() string {
+	return "AssignExpr"
+}
+
+type AssignExprAcceptor[R any] AssignExpr
+
+func (a AssignExprAcceptor[R]) accept(vis ExprVisitor[R]) (R, error) {
+	return vis.VisitAssignExpr(AssignExpr(a))
 }
 
 type BinaryExpr struct {
@@ -85,6 +101,8 @@ func (v VariableExprAcceptor[R]) accept(vis ExprVisitor[R]) (R, error) {
 
 func asExprAcceptor[R any](expr Expr) ExprAcceptor[R] {
 	switch e := expr.(type) {
+	case AssignExpr:
+		return AssignExprAcceptor[R](e)
 	case BinaryExpr:
 		return BinaryExprAcceptor[R](e)
 	case GroupingExpr:

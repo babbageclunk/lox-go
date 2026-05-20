@@ -218,3 +218,15 @@ func (i Interpreter) VisitVarStmt(stmt VarStmt) (Void, error) {
 	i.environment.define(stmt.Name.Lexeme, value)
 	return void, nil
 }
+
+func (i Interpreter) VisitAssignExpr(expr AssignExpr) (any, error) {
+	value, err := i.Evaluate(expr.Value)
+	if err != nil {
+		return nil, err
+	}
+	err = i.environment.assign(expr.Name, value)
+	if err != nil {
+		return nil, err
+	}
+	return value, nil
+}

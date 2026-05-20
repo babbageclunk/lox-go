@@ -47,7 +47,7 @@ func (p *Parser) parse() (statements []Stmt) {
 // }
 
 func (p *Parser) expression() Expr {
-	return p.equality()
+	return p.assignment()
 }
 
 func (p *Parser) declaration() (result Stmt) {
@@ -98,6 +98,22 @@ func (p *Parser) expressionStatement() Stmt {
 	expr := p.expression()
 	p.consume(TokenSemicolon, "Expect ';' after expression.")
 	return ExpressionStmt{Expression: expr}
+}
+
+func (p *Parser) assignment() Expr {
+	expr := p.equality()
+
+	if p.match(TokenEqual) {
+		equals := p.previous()
+		value := p.assignment()
+
+		if varExpr, ok := expr.(VariableExpr); ok {
+			return AssignExpr{Name: varExpr.Name, Value: value}
+		}
+
+		p.error(equals, "Invalid assignment target.")
+	}
+	return expr
 }
 
 // private Expr equality() {

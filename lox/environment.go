@@ -18,3 +18,11 @@ func (e Environment) get(name Token) (any, error) {
 
 	return nil, newTokenError(name, "Undefined variable %q.", name.Lexeme)
 }
+
+func (e Environment) assign(name Token, value any) error {
+	if _, found := e[name.Lexeme]; found {
+		e[name.Lexeme] = value
+		return nil
+	}
+	return newTokenError(name, "Undefined variable %q.", name.Lexeme)
+}

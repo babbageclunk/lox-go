@@ -17,6 +17,10 @@ func (AstPrinter) Print(expr Expr) (string, error) {
 	return AcceptExpr(expr, AstPrinter{})
 }
 
+func (p AstPrinter) VisitAssignExpr(expr AssignExpr) (string, error) {
+	return p.parenthesize(fmt.Sprintf("assign %q", expr.Name.Lexeme), expr.Value)
+}
+
 // @Override
 // public String visitBinaryExpr(Expr.Binary expr) {
 //   return parenthesize(expr.operator.lexeme,
