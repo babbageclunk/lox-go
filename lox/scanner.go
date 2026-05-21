@@ -1,6 +1,9 @@
 package lox
 
-import "strconv"
+import (
+	"fmt"
+	"strconv"
+)
 
 // import java.util.ArrayList;
 // import java.util.HashMap;
@@ -27,6 +30,7 @@ type Scanner struct {
 	start   int
 	current int
 	line    int
+	err     error
 }
 
 func NewScanner(source string) *Scanner {
@@ -44,14 +48,21 @@ func NewScanner(source string) *Scanner {
 //   return tokens;
 // }
 
-func (s *Scanner) ScanTokens() []Token {
-	for !s.isAtEnd() {
+func (s *Scanner) ScanTokens() ([]Token, error) {
+	for !s.isAtEnd() && s.err == nil {
 		// We're at the beginning of the next lexeme.
 		s.start = s.current
 		s.scanToken()
 	}
+	if s.err != nil {
+		return nil, s.err
+	}
 	s.tokens = append(s.tokens, NewToken(TokenEof, "", nil, s.line))
-	return s.tokens
+	return s.tokens, nil
+}
+
+func (s *Scanner) report(line int, message string) {
+	s.err = fmt.Errorf("[line %d] Error: %s", line, message)
 }
 
 //	private boolean isAtEnd() {
@@ -192,7 +203,7 @@ func (s *Scanner) scanToken() {
 		} else if isAlpha(c) {
 			s.identifier()
 		} else {
-			report(s.line, "Unexpected character.")
+			s.report(s.line, "Unexpected character.")
 		}
 	}
 }
@@ -248,7 +259,7 @@ func (s *Scanner) number() {
 
 	value, err := strconv.ParseFloat(string(s.source[s.start:s.current]), 64)
 	if err != nil {
-		report(s.line, "parsing float: "+err.Error())
+		s.report(s.line, "parsing float: "+err.Error())
 		return
 	}
 	s.addTokenLit(TokenNumber, value)
@@ -281,7 +292,7 @@ func (s *Scanner) string() {
 	}
 
 	if s.isAtEnd() {
-		report(s.line, "Unterminated string.")
+		s.report(s.line, "Unterminated string.")
 		return
 	}
 

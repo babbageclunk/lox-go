@@ -23,11 +23,23 @@ func RunFile(path string) error {
 	if err != nil {
 		return fmt.Errorf("reading %s: %w", path, err)
 	}
-	run(string(bytes))
-	if hadError {
+	scanner := NewScanner(string(bytes))
+	tokens, err := scanner.ScanTokens()
+	if err != nil {
+		runtimeError(err)
 		os.Exit(65)
 	}
-	if hadRuntimeError {
+	parser := NewParser(tokens)
+	statements, err := parser.parse()
+	// Stop if there was a syntax error.
+	if err != nil {
+		runtimeError(err)
+		os.Exit(65)
+	}
+
+	err = interpreter.Interpret(statements)
+	if err != nil {
+		runtimeError(err)
 		os.Exit(70)
 	}
 	return nil
@@ -58,7 +70,6 @@ func RunPrompt() error {
 			return fmt.Errorf("reading line: %w", err)
 		}
 		run(string(bytes))
-		hadError = false
 	}
 }
 
@@ -77,40 +88,41 @@ var interpreter = NewInterpreter()
 
 func run(source string) {
 	scanner := NewScanner(source)
-	tokens := scanner.ScanTokens()
+	tokens, err := scanner.ScanTokens()
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
 	parser := NewParser(tokens)
-	statements := parser.parse()
+	expr, ok := parser.safeExpression()
+	if ok {
+		val, err := interpreter.Evaluate(expr)
+		if err != nil {
+			runtimeError(err)
+			return
+		}
+		fmt.Println(stringify(val))
+		return
+	}
+	statements, err := parser.parse()
 	// Stop if there was a syntax error.
-	if hadError {
+	if err != nil {
+		runtimeError(err)
 		return
 	}
 
-	interpreter.Interpret(statements)
+	err = interpreter.Interpret(statements)
+	if err != nil {
+		runtimeError(err)
+	}
 }
 
 // static void error(int line, String message) {
 //   report(line, "", message);
 // }
 
-// private static void report(int line, String where,
-//                            String message) {
-//   System.err.println(
-//       "[line " + line + "] Error" + where + ": " + message);
-//   hadError = true;
-// }
-
-func report(line int, message string) {
-	reportError(line, "", message)
-}
-
-var (
-	hadError        = false
-	hadRuntimeError = false
-)
-
-func reportError(line int, where, message string) {
-	fmt.Printf("[line %d] Error%s: %s\n", line, where, message)
-	hadError = true
+func reportError(line int, where, message string) error {
+	return fmt.Errorf("[line %d] Error%s: %s", line, where, message)
 }
 
 func runtimeError(err error) {
@@ -120,7 +132,6 @@ func runtimeError(err error) {
 	} else {
 		fmt.Fprintln(os.Stderr, err.Error())
 	}
-	hadRuntimeError = true
 }
 
 // static void error(Token token, String message) {
@@ -131,10 +142,12 @@ func runtimeError(err error) {
 //   }
 // }
 
-func loxError(token Token, message string) {
+func loxError(token Token, message string) error {
+	var where string
 	if token.Type == TokenEof {
-		reportError(token.Line, " at end", message)
+		where = " at end"
 	} else {
-		reportError(token.Line, fmt.Sprintf(" at %q", token.Lexeme), message)
+		where = fmt.Sprintf(" at %q", token.Lexeme)
 	}
+	return reportError(token.Line, where, message)
 }

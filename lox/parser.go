@@ -19,6 +19,7 @@ var ParseError = errors.New("parse error")
 type Parser struct {
 	tokens  []Token
 	current int
+	err     error
 }
 
 func NewParser(tokens []Token) *Parser {
@@ -35,11 +36,12 @@ func NewParser(tokens []Token) *Parser {
 //   }
 // }
 
-func (p *Parser) parse() (statements []Stmt) {
-	for !p.isAtEnd() {
+func (p *Parser) parse() (statements []Stmt, err error) {
+	p.err = nil
+	for !p.isAtEnd() && p.err == nil {
 		statements = append(statements, p.declaration())
 	}
-	return statements
+	return statements, p.err
 }
 
 // private Expr expression() {
@@ -48,6 +50,22 @@ func (p *Parser) parse() (statements []Stmt) {
 
 func (p *Parser) expression() Expr {
 	return p.assignment()
+}
+
+func (p *Parser) safeExpression() (expr Expr, ok bool) {
+	defer func() {
+		val := recover()
+		if val == nil {
+			return
+		}
+		if err, _ := val.(error); errors.Is(err, ParseError) {
+			expr = nil
+			ok = false
+			return
+		}
+		panic(val)
+	}()
+	return p.expression(), true
 }
 
 func (p *Parser) declaration() (result Stmt) {
@@ -378,8 +396,8 @@ func (p *Parser) previous() Token {
 // }
 
 func (p *Parser) error(token Token, message string) error {
-	loxError(token, message)
-	return ParseError
+	p.err = errors.Join(ParseError, loxError(token, message))
+	return p.err
 }
 
 // private void synchronize() {

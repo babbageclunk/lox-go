@@ -16,13 +16,13 @@ func NewInterpreter() Interpreter {
 	}
 }
 
-func (i Interpreter) Interpret(statements []Stmt) {
+func (i Interpreter) Interpret(statements []Stmt) error {
 	for _, statement := range statements {
 		if err := i.Execute(statement); err != nil {
-			runtimeError(err)
-			return
+			return err
 		}
 	}
+	return nil
 }
 
 func stringify(val any) string {
