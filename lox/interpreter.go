@@ -7,7 +7,7 @@ import (
 )
 
 type Interpreter struct {
-	environment Environment
+	environment *Environment
 }
 
 func NewInterpreter() Interpreter {
@@ -185,9 +185,27 @@ func (i Interpreter) Execute(stmt Stmt) error {
 	return err
 }
 
+func (i Interpreter) ExecuteBlock(statements []Stmt, env *Environment) error {
+	prev := i.environment
+	defer func() {
+		i.environment = prev
+	}()
+	i.environment = env
+	for _, statement := range statements {
+		if err := i.Execute(statement); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 type Void struct{}
 
 var void Void
+
+func (i Interpreter) VisitBlockStmt(stmt BlockStmt) (Void, error) {
+	return void, i.ExecuteBlock(stmt.Statements, NewNestedEnvironment(i.environment))
+}
 
 func (i Interpreter) VisitExpressionStmt(stmt ExpressionStmt) (Void, error) {
 	if _, err := i.Evaluate(stmt.Expression); err != nil {

@@ -73,6 +73,9 @@ func (p *Parser) statement() Stmt {
 	if p.match(TokenPrint) {
 		return p.printStatement()
 	}
+	if p.match(TokenLeftBrace) {
+		return BlockStmt{Statements: p.block()}
+	}
 	return p.expressionStatement()
 }
 
@@ -92,6 +95,15 @@ func (p *Parser) varDeclaration() Stmt {
 
 	p.consume(TokenSemicolon, "Expect ';' after variable declaration.")
 	return VarStmt{Name: name, Initializer: initializer}
+}
+
+func (p *Parser) block() []Stmt {
+	var statements []Stmt
+	for !p.check(TokenRightBrace) && !p.isAtEnd() {
+		statements = append(statements, p.declaration())
+	}
+	p.consume(TokenRightBrace, "Expect '}' after block.")
+	return statements
 }
 
 func (p *Parser) expressionStatement() Stmt {

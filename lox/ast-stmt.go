@@ -3,9 +3,24 @@ package lox
 import "fmt"
 
 type StmtVisitor[R any] interface {
+	VisitBlockStmt(stmt BlockStmt) (R, error)
 	VisitExpressionStmt(stmt ExpressionStmt) (R, error)
 	VisitPrintStmt(stmt PrintStmt) (R, error)
 	VisitVarStmt(stmt VarStmt) (R, error)
+}
+
+type BlockStmt struct {
+	Statements []Stmt
+}
+
+func (BlockStmt) sKind() string {
+	return "BlockStmt"
+}
+
+type BlockStmtAcceptor[R any] BlockStmt
+
+func (b BlockStmtAcceptor[R]) accept(vis StmtVisitor[R]) (R, error) {
+	return vis.VisitBlockStmt(BlockStmt(b))
 }
 
 type ExpressionStmt struct {
@@ -53,6 +68,8 @@ func (v VarStmtAcceptor[R]) accept(vis StmtVisitor[R]) (R, error) {
 
 func asStmtAcceptor[R any](stmt Stmt) StmtAcceptor[R] {
 	switch e := stmt.(type) {
+	case BlockStmt:
+		return BlockStmtAcceptor[R](e)
 	case ExpressionStmt:
 		return ExpressionStmtAcceptor[R](e)
 	case PrintStmt:

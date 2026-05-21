@@ -52,6 +52,7 @@ func main() {
 		os.Exit(65)
 	}
 	err = defineAst(baseFilename+"-stmt.go", "Stmt", []string{
+		"Block      : Statements []Stmt",
 		"Expression : Expression Expr",
 		"Print      : Expression Expr",
 		"Var        : Name Token, Initializer Expr",
