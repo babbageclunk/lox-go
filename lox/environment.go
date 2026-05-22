@@ -1,5 +1,9 @@
 package lox
 
+type Uninitialised struct{}
+
+var uninitialised = Uninitialised{}
+
 type Environment struct {
 	enclosing *Environment
 	values    map[string]any
@@ -25,6 +29,9 @@ func (e *Environment) define(name string, value any) {
 func (e *Environment) get(name Token) (any, error) {
 	val, found := e.values[name.Lexeme]
 	if found {
+		if _, ok := val.(Uninitialised); ok {
+			return nil, newTokenError(name, "Uninitialised variable %q", name.Lexeme)
+		}
 		return val, nil
 	}
 

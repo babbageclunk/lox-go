@@ -231,6 +231,8 @@ func (i Interpreter) VisitVarStmt(stmt VarStmt) (Void, error) {
 		if err != nil {
 			return void, err
 		}
+	} else {
+		value = uninitialised
 	}
 
 	i.environment.define(stmt.Name.Lexeme, value)
