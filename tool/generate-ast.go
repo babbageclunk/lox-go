@@ -54,6 +54,7 @@ func main() {
 	err = defineAst(baseFilename+"-stmt.go", "Stmt", []string{
 		"Block      : Statements []Stmt",
 		"Expression : Expression Expr",
+		"If         : Condition Expr, ThenBranch Stmt, ElseBranch Stmt",
 		"Print      : Expression Expr",
 		"Var        : Name Token, Initializer Expr",
 	})

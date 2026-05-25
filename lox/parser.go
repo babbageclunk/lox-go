@@ -88,13 +88,35 @@ func (p *Parser) declaration() (result Stmt) {
 }
 
 func (p *Parser) statement() Stmt {
-	if p.match(TokenPrint) {
+	switch {
+	case p.match(TokenIf):
+		return p.ifStatement()
+
+	case p.match(TokenPrint):
 		return p.printStatement()
-	}
-	if p.match(TokenLeftBrace) {
+
+	case p.match(TokenLeftBrace):
 		return BlockStmt{Statements: p.block()}
+	default:
+		return p.expressionStatement()
 	}
-	return p.expressionStatement()
+}
+
+func (p *Parser) ifStatement() Stmt {
+	p.consume(TokenLeftParen, "Expect '(' after 'if'.")
+	condition := p.expression()
+	p.consume(TokenRightParen, "Exoect ')' after if condition.")
+
+	thenBranch := p.statement()
+	var elseBranch Stmt
+	if p.match(TokenElse) {
+		elseBranch = p.statement()
+	}
+	return IfStmt{
+		Condition:  condition,
+		ThenBranch: thenBranch,
+		ElseBranch: elseBranch,
+	}
 }
 
 func (p *Parser) printStatement() Stmt {

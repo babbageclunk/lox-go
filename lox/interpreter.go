@@ -214,6 +214,19 @@ func (i Interpreter) VisitExpressionStmt(stmt ExpressionStmt) (Void, error) {
 	return void, nil
 }
 
+func (i Interpreter) VisitIfStmt(stmt IfStmt) (Void, error) {
+	value, err := i.Evaluate(stmt.Condition)
+	if err != nil {
+		return void, err
+	}
+	if i.isTruthy(value) {
+		return void, i.Execute(stmt.ThenBranch)
+	} else if stmt.ElseBranch != nil {
+		return void, i.Execute(stmt.ElseBranch)
+	}
+	return void, nil
+}
+
 func (i Interpreter) VisitPrintStmt(stmt PrintStmt) (Void, error) {
 	value, err := i.Evaluate(stmt.Expression)
 	if err != nil {
