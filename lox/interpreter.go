@@ -44,6 +44,23 @@ func (i Interpreter) VisitLiteralExpr(expr LiteralExpr) (any, error) {
 	return expr.Value, nil
 }
 
+func (i Interpreter) VisitLogicalExpr(expr LogicalExpr) (any, error) {
+	left, err := i.Evaluate(expr.Left)
+	if err != nil {
+		return nil, err
+	}
+	if expr.Operator.Type == TokenOr {
+		if i.isTruthy(left) {
+			return left, nil
+		}
+	} else {
+		if !i.isTruthy(left) {
+			return left, nil
+		}
+	}
+	return i.Evaluate(expr.Right)
+}
+
 func (i Interpreter) VisitUnaryExpr(expr UnaryExpr) (any, error) {
 	right, err := i.Evaluate(expr.Right)
 	if err != nil {

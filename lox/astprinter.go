@@ -53,6 +53,10 @@ func (p AstPrinter) VisitLiteralExpr(expr LiteralExpr) (string, error) {
 	return fmt.Sprint(expr.Value), nil
 }
 
+func (p AstPrinter) VisitLogicalExpr(expr LogicalExpr) (string, error) {
+	return p.parenthesize(expr.Operator.Lexeme, expr.Left, expr.Right)
+}
+
 // @Override
 // public String visitUnaryExpr(Expr.Unary expr) {
 //   return parenthesize(expr.operator.lexeme, expr.right);

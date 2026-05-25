@@ -153,7 +153,7 @@ func (p *Parser) expressionStatement() Stmt {
 }
 
 func (p *Parser) assignment() Expr {
-	expr := p.equality()
+	expr := p.or()
 
 	if p.match(TokenEqual) {
 		equals := p.previous()
@@ -165,6 +165,30 @@ func (p *Parser) assignment() Expr {
 
 		p.error(equals, "Invalid assignment target.")
 	}
+	return expr
+}
+
+func (p *Parser) or() Expr {
+	expr := p.and()
+
+	for p.match(TokenOr) {
+		operator := p.previous()
+		right := p.and()
+		expr = LogicalExpr{Left: expr, Operator: operator, Right: right}
+	}
+
+	return expr
+}
+
+func (p *Parser) and() Expr {
+	expr := p.equality()
+
+	for p.match(TokenAnd) {
+		operator := p.previous()
+		right := p.equality()
+		expr = LogicalExpr{Left: expr, Operator: operator, Right: right}
+	}
+
 	return expr
 }
 

@@ -7,6 +7,7 @@ type ExprVisitor[R any] interface {
 	VisitBinaryExpr(expr BinaryExpr) (R, error)
 	VisitGroupingExpr(expr GroupingExpr) (R, error)
 	VisitLiteralExpr(expr LiteralExpr) (R, error)
+	VisitLogicalExpr(expr LogicalExpr) (R, error)
 	VisitUnaryExpr(expr UnaryExpr) (R, error)
 	VisitVariableExpr(expr VariableExpr) (R, error)
 }
@@ -70,6 +71,22 @@ func (l LiteralExprAcceptor[R]) accept(vis ExprVisitor[R]) (R, error) {
 	return vis.VisitLiteralExpr(LiteralExpr(l))
 }
 
+type LogicalExpr struct {
+	Left Expr
+	Operator Token
+	Right Expr
+}
+
+func (LogicalExpr) eKind() string {
+	return "LogicalExpr"
+}
+
+type LogicalExprAcceptor[R any] LogicalExpr
+
+func (l LogicalExprAcceptor[R]) accept(vis ExprVisitor[R]) (R, error) {
+	return vis.VisitLogicalExpr(LogicalExpr(l))
+}
+
 type UnaryExpr struct {
 	Operator Token
 	Right Expr
@@ -109,6 +126,8 @@ func asExprAcceptor[R any](expr Expr) ExprAcceptor[R] {
 		return GroupingExprAcceptor[R](e)
 	case LiteralExpr:
 		return LiteralExprAcceptor[R](e)
+	case LogicalExpr:
+		return LogicalExprAcceptor[R](e)
 	case UnaryExpr:
 		return UnaryExprAcceptor[R](e)
 	case VariableExpr:
