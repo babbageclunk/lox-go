@@ -94,6 +94,7 @@ const (
 
 	// Keywords.
 	TokenAnd    TokenType = "AND"
+	TokenBreak  TokenType = "BREAK"
 	TokenClass  TokenType = "CLASS"
 	TokenElse   TokenType = "ELSE"
 	TokenFalse  TokenType = "FALSE"
@@ -135,6 +136,7 @@ const (
 
 var keywords = map[string]TokenType{
 	"and":    TokenAnd,
+	"break":  TokenBreak,
 	"class":  TokenClass,
 	"else":   TokenElse,
 	"false":  TokenFalse,

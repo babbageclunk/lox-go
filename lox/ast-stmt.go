@@ -4,6 +4,7 @@ import "fmt"
 
 type StmtVisitor[R any] interface {
 	VisitBlockStmt(stmt BlockStmt) (R, error)
+	VisitBreakStmt(stmt BreakStmt) (R, error)
 	VisitExpressionStmt(stmt ExpressionStmt) (R, error)
 	VisitIfStmt(stmt IfStmt) (R, error)
 	VisitPrintStmt(stmt PrintStmt) (R, error)
@@ -23,6 +24,19 @@ type BlockStmtAcceptor[R any] BlockStmt
 
 func (b BlockStmtAcceptor[R]) accept(vis StmtVisitor[R]) (R, error) {
 	return vis.VisitBlockStmt(BlockStmt(b))
+}
+
+type BreakStmt struct {
+}
+
+func (BreakStmt) sKind() string {
+	return "BreakStmt"
+}
+
+type BreakStmtAcceptor[R any] BreakStmt
+
+func (b BreakStmtAcceptor[R]) accept(vis StmtVisitor[R]) (R, error) {
+	return vis.VisitBreakStmt(BreakStmt(b))
 }
 
 type ExpressionStmt struct {
@@ -103,6 +117,8 @@ func asStmtAcceptor[R any](stmt Stmt) StmtAcceptor[R] {
 	switch e := stmt.(type) {
 	case BlockStmt:
 		return BlockStmtAcceptor[R](e)
+	case BreakStmt:
+		return BreakStmtAcceptor[R](e)
 	case ExpressionStmt:
 		return ExpressionStmtAcceptor[R](e)
 	case IfStmt:

@@ -89,6 +89,10 @@ func (p *Parser) declaration() (result Stmt) {
 
 func (p *Parser) statement() Stmt {
 	switch {
+	case p.match(TokenBreak):
+		p.consume(TokenSemicolon, "Expect ';' after 'break'.")
+		return BreakStmt{}
+
 	case p.match(TokenFor):
 		return p.forStatement()
 

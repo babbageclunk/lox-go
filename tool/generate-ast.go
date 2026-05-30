@@ -54,6 +54,7 @@ func main() {
 	}
 	err = defineAst(baseFilename+"-stmt.go", "Stmt", []string{
 		"Block      : Statements []Stmt",
+		"Break      : ",
 		"Expression : Expression Expr",
 		"If         : Condition Expr, ThenBranch Stmt, ElseBranch Stmt",
 		"Print      : Expression Expr",
@@ -108,7 +109,13 @@ func parseTypes(baseName string, lines []string) ([]Type, error) {
 			return nil, eris.Errorf("malformed type line %d: %q", i+1, line)
 		}
 		typeName := strings.TrimSpace(parts[0]) + baseName
-		fieldLines := strings.Split(parts[1], ",")
+		fieldStr := strings.TrimSpace(parts[1])
+		if len(fieldStr) == 0 {
+			types[i] = Type{name: typeName}
+			continue
+		}
+
+		fieldLines := strings.Split(fieldStr, ",")
 		fields := make([]Field, len(fieldLines))
 		for j, f := range fieldLines {
 			parts := strings.SplitN(strings.TrimSpace(f), " ", 2)

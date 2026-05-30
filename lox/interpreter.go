@@ -8,6 +8,7 @@ import (
 
 type Interpreter struct {
 	environment *Environment
+	breaking    bool
 }
 
 func NewInterpreter() Interpreter {
@@ -16,7 +17,7 @@ func NewInterpreter() Interpreter {
 	}
 }
 
-func (i Interpreter) Interpret(statements []Stmt) error {
+func (i *Interpreter) Interpret(statements []Stmt) error {
 	for _, statement := range statements {
 		if err := i.Execute(statement); err != nil {
 			return err
@@ -40,11 +41,11 @@ func stringify(val any) string {
 	return fmt.Sprintf("%v", val)
 }
 
-func (i Interpreter) VisitLiteralExpr(expr LiteralExpr) (any, error) {
+func (i *Interpreter) VisitLiteralExpr(expr LiteralExpr) (any, error) {
 	return expr.Value, nil
 }
 
-func (i Interpreter) VisitLogicalExpr(expr LogicalExpr) (any, error) {
+func (i *Interpreter) VisitLogicalExpr(expr LogicalExpr) (any, error) {
 	left, err := i.Evaluate(expr.Left)
 	if err != nil {
 		return nil, err
@@ -61,7 +62,7 @@ func (i Interpreter) VisitLogicalExpr(expr LogicalExpr) (any, error) {
 	return i.Evaluate(expr.Right)
 }
 
-func (i Interpreter) VisitUnaryExpr(expr UnaryExpr) (any, error) {
+func (i *Interpreter) VisitUnaryExpr(expr UnaryExpr) (any, error) {
 	right, err := i.Evaluate(expr.Right)
 	if err != nil {
 		return nil, err
@@ -79,18 +80,18 @@ func (i Interpreter) VisitUnaryExpr(expr UnaryExpr) (any, error) {
 	return nil, nil
 }
 
-func (i Interpreter) VisitVariableExpr(expr VariableExpr) (any, error) {
+func (i *Interpreter) VisitVariableExpr(expr VariableExpr) (any, error) {
 	return i.environment.get(expr.Name)
 }
 
-func (i Interpreter) checkNumberOperand(operator Token, operand any) error {
+func (i *Interpreter) checkNumberOperand(operator Token, operand any) error {
 	if _, ok := operand.(float64); !ok {
 		return newTokenError(operator, "Operand must be a number.")
 	}
 	return nil
 }
 
-func (i Interpreter) checkNumberOperands(operator Token, left, right any) error {
+func (i *Interpreter) checkNumberOperands(operator Token, left, right any) error {
 	_, leftOk := left.(float64)
 	_, rightOk := right.(float64)
 	if !leftOk || !rightOk {
@@ -99,7 +100,7 @@ func (i Interpreter) checkNumberOperands(operator Token, left, right any) error 
 	return nil
 }
 
-func (i Interpreter) isTruthy(val any) bool {
+func (i *Interpreter) isTruthy(val any) bool {
 	if val == nil {
 		return false
 	}
@@ -109,7 +110,7 @@ func (i Interpreter) isTruthy(val any) bool {
 	return true
 }
 
-func (i Interpreter) isEqual(a, b any) bool {
+func (i *Interpreter) isEqual(a, b any) bool {
 	if a == nil && b == nil {
 		return true
 	}
@@ -119,11 +120,11 @@ func (i Interpreter) isEqual(a, b any) bool {
 	return a == b
 }
 
-func (i Interpreter) VisitGroupingExpr(expr GroupingExpr) (any, error) {
+func (i *Interpreter) VisitGroupingExpr(expr GroupingExpr) (any, error) {
 	return i.Evaluate(expr.Expression)
 }
 
-func (i Interpreter) VisitBinaryExpr(expr BinaryExpr) (any, error) {
+func (i *Interpreter) VisitBinaryExpr(expr BinaryExpr) (any, error) {
 	left, err := i.Evaluate(expr.Left)
 	if err != nil {
 		return nil, err
@@ -193,16 +194,16 @@ func (i Interpreter) VisitBinaryExpr(expr BinaryExpr) (any, error) {
 	return nil, nil
 }
 
-func (i Interpreter) Evaluate(expr Expr) (any, error) {
+func (i *Interpreter) Evaluate(expr Expr) (any, error) {
 	return AcceptExpr(expr, i)
 }
 
-func (i Interpreter) Execute(stmt Stmt) error {
+func (i *Interpreter) Execute(stmt Stmt) error {
 	_, err := AcceptStmt(stmt, i)
 	return err
 }
 
-func (i Interpreter) ExecuteBlock(statements []Stmt, env *Environment) error {
+func (i *Interpreter) ExecuteBlock(statements []Stmt, env *Environment) error {
 	prev := i.environment
 	defer func() {
 		i.environment = prev
@@ -212,6 +213,9 @@ func (i Interpreter) ExecuteBlock(statements []Stmt, env *Environment) error {
 		if err := i.Execute(statement); err != nil {
 			return err
 		}
+		if i.breaking {
+			return nil
+		}
 	}
 	return nil
 }
@@ -220,18 +224,23 @@ type Void struct{}
 
 var void Void
 
-func (i Interpreter) VisitBlockStmt(stmt BlockStmt) (Void, error) {
+func (i *Interpreter) VisitBreakStmt(stmt BreakStmt) (Void, error) {
+	i.breaking = true
+	return void, nil
+}
+
+func (i *Interpreter) VisitBlockStmt(stmt BlockStmt) (Void, error) {
 	return void, i.ExecuteBlock(stmt.Statements, NewNestedEnvironment(i.environment))
 }
 
-func (i Interpreter) VisitExpressionStmt(stmt ExpressionStmt) (Void, error) {
+func (i *Interpreter) VisitExpressionStmt(stmt ExpressionStmt) (Void, error) {
 	if _, err := i.Evaluate(stmt.Expression); err != nil {
 		return void, err
 	}
 	return void, nil
 }
 
-func (i Interpreter) VisitIfStmt(stmt IfStmt) (Void, error) {
+func (i *Interpreter) VisitIfStmt(stmt IfStmt) (Void, error) {
 	value, err := i.Evaluate(stmt.Condition)
 	if err != nil {
 		return void, err
@@ -244,7 +253,7 @@ func (i Interpreter) VisitIfStmt(stmt IfStmt) (Void, error) {
 	return void, nil
 }
 
-func (i Interpreter) VisitPrintStmt(stmt PrintStmt) (Void, error) {
+func (i *Interpreter) VisitPrintStmt(stmt PrintStmt) (Void, error) {
 	value, err := i.Evaluate(stmt.Expression)
 	if err != nil {
 		return void, err
@@ -253,7 +262,7 @@ func (i Interpreter) VisitPrintStmt(stmt PrintStmt) (Void, error) {
 	return void, nil
 }
 
-func (i Interpreter) VisitVarStmt(stmt VarStmt) (Void, error) {
+func (i *Interpreter) VisitVarStmt(stmt VarStmt) (Void, error) {
 	var value any
 	if stmt.Initializer != nil {
 		var err error
@@ -269,7 +278,7 @@ func (i Interpreter) VisitVarStmt(stmt VarStmt) (Void, error) {
 	return void, nil
 }
 
-func (i Interpreter) VisitWhileStmt(stmt WhileStmt) (Void, error) {
+func (i *Interpreter) VisitWhileStmt(stmt WhileStmt) (Void, error) {
 	for {
 		val, err := i.Evaluate(stmt.Condition)
 		if err != nil {
@@ -281,11 +290,15 @@ func (i Interpreter) VisitWhileStmt(stmt WhileStmt) (Void, error) {
 		if err := i.Execute(stmt.Body); err != nil {
 			return void, err
 		}
+		if i.breaking {
+			i.breaking = false
+			break
+		}
 	}
 	return void, nil
 }
 
-func (i Interpreter) VisitAssignExpr(expr AssignExpr) (any, error) {
+func (i *Interpreter) VisitAssignExpr(expr AssignExpr) (any, error) {
 	value, err := i.Evaluate(expr.Value)
 	if err != nil {
 		return nil, err
