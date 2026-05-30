@@ -269,6 +269,22 @@ func (i Interpreter) VisitVarStmt(stmt VarStmt) (Void, error) {
 	return void, nil
 }
 
+func (i Interpreter) VisitWhileStmt(stmt WhileStmt) (Void, error) {
+	for {
+		val, err := i.Evaluate(stmt.Condition)
+		if err != nil {
+			return void, err
+		}
+		if !i.isTruthy(val) {
+			break
+		}
+		if err := i.Execute(stmt.Body); err != nil {
+			return void, err
+		}
+	}
+	return void, nil
+}
+
 func (i Interpreter) VisitAssignExpr(expr AssignExpr) (any, error) {
 	value, err := i.Evaluate(expr.Value)
 	if err != nil {

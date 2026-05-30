@@ -8,6 +8,7 @@ type StmtVisitor[R any] interface {
 	VisitIfStmt(stmt IfStmt) (R, error)
 	VisitPrintStmt(stmt PrintStmt) (R, error)
 	VisitVarStmt(stmt VarStmt) (R, error)
+	VisitWhileStmt(stmt WhileStmt) (R, error)
 }
 
 type BlockStmt struct {
@@ -83,6 +84,21 @@ func (v VarStmtAcceptor[R]) accept(vis StmtVisitor[R]) (R, error) {
 	return vis.VisitVarStmt(VarStmt(v))
 }
 
+type WhileStmt struct {
+	Condition Expr
+	Body Stmt
+}
+
+func (WhileStmt) sKind() string {
+	return "WhileStmt"
+}
+
+type WhileStmtAcceptor[R any] WhileStmt
+
+func (w WhileStmtAcceptor[R]) accept(vis StmtVisitor[R]) (R, error) {
+	return vis.VisitWhileStmt(WhileStmt(w))
+}
+
 func asStmtAcceptor[R any](stmt Stmt) StmtAcceptor[R] {
 	switch e := stmt.(type) {
 	case BlockStmt:
@@ -95,6 +111,8 @@ func asStmtAcceptor[R any](stmt Stmt) StmtAcceptor[R] {
 		return PrintStmtAcceptor[R](e)
 	case VarStmt:
 		return VarStmtAcceptor[R](e)
+	case WhileStmt:
+		return WhileStmtAcceptor[R](e)
 	}
 	panic(fmt.Errorf("no acceptor for stmt %s", stmt.sKind()))
 }

@@ -95,6 +95,9 @@ func (p *Parser) statement() Stmt {
 	case p.match(TokenPrint):
 		return p.printStatement()
 
+	case p.match(TokenWhile):
+		return p.whileStatement()
+
 	case p.match(TokenLeftBrace):
 		return BlockStmt{Statements: p.block()}
 	default:
@@ -135,6 +138,17 @@ func (p *Parser) varDeclaration() Stmt {
 
 	p.consume(TokenSemicolon, "Expect ';' after variable declaration.")
 	return VarStmt{Name: name, Initializer: initializer}
+}
+
+func (p *Parser) whileStatement() Stmt {
+	p.consume(TokenLeftParen, "Expect '(' after 'while'.")
+	condition := p.expression()
+	p.consume(TokenRightParen, "Expect ')' after condition.")
+	body := p.statement()
+	return WhileStmt{
+		Condition: condition,
+		Body:      body,
+	}
 }
 
 func (p *Parser) block() []Stmt {
