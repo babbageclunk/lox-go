@@ -31,6 +31,12 @@ func (p AstPrinter) VisitBinaryExpr(expr BinaryExpr) (string, error) {
 	return p.parenthesize(expr.Operator.Lexeme, expr.Left, expr.Right)
 }
 
+func (p AstPrinter) VisitCallExpr(expr CallExpr) (string, error) {
+	items := []Expr{expr.Callee}
+	items = append(items, expr.Arguments...)
+	return p.parenthesize("call", items...)
+}
+
 // @Override
 // public String visitGroupingExpr(Expr.Grouping expr) {
 //   return parenthesize("group", expr.expression);

@@ -194,6 +194,34 @@ func (i *Interpreter) VisitBinaryExpr(expr BinaryExpr) (any, error) {
 	return nil, nil
 }
 
+func (i *Interpreter) VisitCallExpr(expr CallExpr) (any, error) {
+	callee, err := i.Evaluate(expr.Callee)
+	if err != nil {
+		return nil, err
+	}
+	arguments := make([]any, len(expr.Arguments))
+	for n, argument := range expr.Arguments {
+		value, err := i.Evaluate(argument)
+		if err != nil {
+			return nil, err
+		}
+		arguments[n] = value
+	}
+	function, ok := callee.(callable)
+	if !ok {
+		return nil, newTokenError(expr.Paren, "Can only call functions and classes.")
+	}
+	if len(arguments) != function.arity() {
+		return nil, newTokenError(
+			expr.Paren,
+			"Expected %d arguments but got %d.",
+			function.arity(),
+			len(arguments),
+		)
+	}
+	return function.call(i, arguments)
+}
+
 func (i *Interpreter) Evaluate(expr Expr) (any, error) {
 	return AcceptExpr(expr, i)
 }

@@ -5,6 +5,7 @@ import "fmt"
 type ExprVisitor[R any] interface {
 	VisitAssignExpr(expr AssignExpr) (R, error)
 	VisitBinaryExpr(expr BinaryExpr) (R, error)
+	VisitCallExpr(expr CallExpr) (R, error)
 	VisitGroupingExpr(expr GroupingExpr) (R, error)
 	VisitLiteralExpr(expr LiteralExpr) (R, error)
 	VisitLogicalExpr(expr LogicalExpr) (R, error)
@@ -41,6 +42,22 @@ type BinaryExprAcceptor[R any] BinaryExpr
 
 func (b BinaryExprAcceptor[R]) accept(vis ExprVisitor[R]) (R, error) {
 	return vis.VisitBinaryExpr(BinaryExpr(b))
+}
+
+type CallExpr struct {
+	Callee Expr
+	Paren Token
+	Arguments []Expr
+}
+
+func (CallExpr) eKind() string {
+	return "CallExpr"
+}
+
+type CallExprAcceptor[R any] CallExpr
+
+func (c CallExprAcceptor[R]) accept(vis ExprVisitor[R]) (R, error) {
+	return vis.VisitCallExpr(CallExpr(c))
 }
 
 type GroupingExpr struct {
@@ -122,6 +139,8 @@ func asExprAcceptor[R any](expr Expr) ExprAcceptor[R] {
 		return AssignExprAcceptor[R](e)
 	case BinaryExpr:
 		return BinaryExprAcceptor[R](e)
+	case CallExpr:
+		return CallExprAcceptor[R](e)
 	case GroupingExpr:
 		return GroupingExprAcceptor[R](e)
 	case LiteralExpr:
