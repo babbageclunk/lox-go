@@ -5,12 +5,6 @@ import (
 	"strings"
 )
 
-// class AstPrinter implements Expr.Visitor<String> {
-//   String print(Expr expr) {
-//     return expr.accept(this);
-//   }
-// }
-
 type AstPrinter struct{}
 
 func (AstPrinter) Print(expr Expr) (string, error) {
@@ -20,12 +14,6 @@ func (AstPrinter) Print(expr Expr) (string, error) {
 func (p AstPrinter) VisitAssignExpr(expr AssignExpr) (string, error) {
 	return p.parenthesize(fmt.Sprintf("assign %q", expr.Name.Lexeme), expr.Value)
 }
-
-// @Override
-// public String visitBinaryExpr(Expr.Binary expr) {
-//   return parenthesize(expr.operator.lexeme,
-//                       expr.left, expr.right);
-// }
 
 func (p AstPrinter) VisitBinaryExpr(expr BinaryExpr) (string, error) {
 	return p.parenthesize(expr.Operator.Lexeme, expr.Left, expr.Right)
@@ -37,20 +25,9 @@ func (p AstPrinter) VisitCallExpr(expr CallExpr) (string, error) {
 	return p.parenthesize("call", items...)
 }
 
-// @Override
-// public String visitGroupingExpr(Expr.Grouping expr) {
-//   return parenthesize("group", expr.expression);
-// }
-
 func (p AstPrinter) VisitGroupingExpr(expr GroupingExpr) (string, error) {
 	return p.parenthesize("group", expr.Expression)
 }
-
-// @Override
-// public String visitLiteralExpr(Expr.Literal expr) {
-//   if (expr.value == null) return "nil";
-//   return expr.value.toString();
-// }
 
 func (p AstPrinter) VisitLiteralExpr(expr LiteralExpr) (string, error) {
 	if expr.Value == nil {
@@ -63,11 +40,6 @@ func (p AstPrinter) VisitLogicalExpr(expr LogicalExpr) (string, error) {
 	return p.parenthesize(expr.Operator.Lexeme, expr.Left, expr.Right)
 }
 
-// @Override
-// public String visitUnaryExpr(Expr.Unary expr) {
-//   return parenthesize(expr.operator.lexeme, expr.right);
-// }
-
 func (p AstPrinter) VisitUnaryExpr(expr UnaryExpr) (string, error) {
 	return p.parenthesize(expr.Operator.Lexeme, expr.Right)
 }
@@ -75,19 +47,6 @@ func (p AstPrinter) VisitUnaryExpr(expr UnaryExpr) (string, error) {
 func (p AstPrinter) VisitVariableExpr(expr VariableExpr) (string, error) {
 	return p.parenthesize("var", expr)
 }
-
-// private String parenthesize(String name, Expr... exprs) {
-//   StringBuilder builder = new StringBuilder();
-
-//   builder.append("(").append(name);
-//   for (Expr expr : exprs) {
-//     builder.append(" ");
-//     builder.append(expr.accept(this));
-//   }
-//   builder.append(")");
-
-//   return builder.toString();
-// }
 
 func (p AstPrinter) parenthesize(name string, exprs ...Expr) (string, error) {
 	var b strings.Builder

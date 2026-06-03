@@ -2,24 +2,6 @@ package lox
 
 import "fmt"
 
-// class Token {
-//   final TokenType type;
-//   final String lexeme;
-//   final Object literal;
-//   final int line;
-
-//   Token(TokenType type, String lexeme, Object literal, int line) {
-//     this.type = type;
-//     this.lexeme = lexeme;
-//     this.literal = literal;
-//     this.line = line;
-//   }
-
-//   public String toString() {
-//     return type + " " + lexeme + " " + literal;
-//   }
-// }
-
 type Token struct {
 	Type    TokenType
 	Lexeme  string
@@ -41,27 +23,6 @@ func (t Token) String() string {
 }
 
 type TokenType string
-
-// enum TokenType {
-//   // Single-character tokens.
-//   LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE,
-//   COMMA, DOT, MINUS, PLUS, SEMICOLON, SLASH, STAR,
-
-//   // One or two character tokens.
-//   BANG, BANG_EQUAL,
-//   EQUAL, EQUAL_EQUAL,
-//   GREATER, GREATER_EQUAL,
-//   LESS, LESS_EQUAL,
-
-//   // Literals.
-//   IDENTIFIER, STRING, NUMBER,
-
-//   // Keywords.
-//   AND, CLASS, ELSE, FALSE, FUN, FOR, IF, NIL, OR,
-//   PRINT, RETURN, SUPER, THIS, TRUE, VAR, WHILE,
-
-//   EOF
-// }
 
 const (
 	// Single-character tokens.
@@ -113,26 +74,6 @@ const (
 
 	TokenEof TokenType = "EOF"
 )
-
-// static {
-//   keywords = new HashMap<>();
-//   keywords.put("and",    AND);
-//   keywords.put("class",  CLASS);
-//   keywords.put("else",   ELSE);
-//   keywords.put("false",  FALSE);
-//   keywords.put("for",    FOR);
-//   keywords.put("fun",    FUN);
-//   keywords.put("if",     IF);
-//   keywords.put("nil",    NIL);
-//   keywords.put("or",     OR);
-//   keywords.put("print",  PRINT);
-//   keywords.put("return", RETURN);
-//   keywords.put("super",  SUPER);
-//   keywords.put("this",   THIS);
-//   keywords.put("true",   TRUE);
-//   keywords.put("var",    VAR);
-//   keywords.put("while",  WHILE);
-// }
 
 var keywords = map[string]TokenType{
 	"and":    TokenAnd,
