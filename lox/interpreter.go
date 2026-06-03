@@ -4,16 +4,22 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Interpreter struct {
-	environment *Environment
-	breaking    bool
+	globals, environment *Environment
+	breaking             bool
 }
 
 func NewInterpreter() Interpreter {
+	globals := NewEnvironment()
+	globals.define("clock", newBuiltin(0, func(args []any) (any, error) {
+		return time.Now().Unix(), nil
+	}))
 	return Interpreter{
-		environment: NewEnvironment(),
+		environment: globals,
+		globals:     globals,
 	}
 }
 
