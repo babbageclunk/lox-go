@@ -274,6 +274,11 @@ func (i *Interpreter) VisitExpressionStmt(stmt ExpressionStmt) (Void, error) {
 	return void, nil
 }
 
+func (i *Interpreter) VisitFunctionStmt(stmt FunctionStmt) (Void, error) {
+	i.environment.define(stmt.Name.Lexeme, newFunction(stmt))
+	return void, nil
+}
+
 func (i *Interpreter) VisitIfStmt(stmt IfStmt) (Void, error) {
 	value, err := i.Evaluate(stmt.Condition)
 	if err != nil {
@@ -343,3 +348,6 @@ func (i *Interpreter) VisitAssignExpr(expr AssignExpr) (any, error) {
 	}
 	return value, nil
 }
+
+var _ ExprVisitor[any] = &Interpreter{}
+var _ StmtVisitor[Void] = &Interpreter{}

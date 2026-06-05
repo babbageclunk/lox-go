@@ -34,6 +34,7 @@ func main() {
 		"Block      : Statements []Stmt",
 		"Break      : ",
 		"Expression : Expression Expr",
+		"Function   : Name Token, Params []Token, Body []Stmt",
 		"If         : Condition Expr, ThenBranch Stmt, ElseBranch Stmt",
 		"Print      : Expression Expr",
 		"Var        : Name Token, Initializer Expr",

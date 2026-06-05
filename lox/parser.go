@@ -2,6 +2,7 @@ package lox
 
 import (
 	"errors"
+	"fmt"
 	"slices"
 )
 
@@ -60,6 +61,9 @@ func (p *Parser) declaration() (result Stmt) {
 		}
 		panic(val)
 	}()
+	if p.match(TokenFun) {
+		return p.function("function")
+	}
 	if p.match(TokenVar) {
 		return p.varDeclaration()
 	}
@@ -193,6 +197,32 @@ func (p *Parser) expressionStatement() Stmt {
 	expr := p.expression()
 	p.consume(TokenSemicolon, "Expect ';' after expression.")
 	return ExpressionStmt{Expression: expr}
+}
+
+func (p *Parser) function(kind string) FunctionStmt {
+	name := p.consume(TokenIdentifier, "Expect %s name.", kind)
+	p.consume(TokenLeftParen, "Expect '(' after %s name.", kind)
+	var parameters []Token
+	if !p.check(TokenRightParen) {
+		for {
+			if len(parameters) >= 255 {
+				p.error(p.peek(), "Can't have more than 255 parameters.")
+			}
+			parameters = append(parameters, p.consume(TokenIdentifier, "Expect parameter name."))
+			if !p.match(TokenComma) {
+				break
+			}
+		}
+	}
+	p.consume(TokenRightParen, "Expect ')' after parameters.")
+
+	p.consume(TokenLeftBrace, "Expect '{' before %s body.", kind)
+	body := p.block()
+	return FunctionStmt{
+		Name:   name,
+		Params: parameters,
+		Body:   body,
+	}
 }
 
 func (p *Parser) assignment() Expr {
@@ -366,9 +396,12 @@ func (p *Parser) match(types ...TokenType) bool {
 	return false
 }
 
-func (p *Parser) consume(tt TokenType, message string) Token {
+func (p *Parser) consume(tt TokenType, message string, args ...any) Token {
 	if p.check(tt) {
 		return p.advance()
+	}
+	if len(args) > 0 {
+		message = fmt.Sprintf(message, args...)
 	}
 	panic(p.error(p.peek(), message))
 }

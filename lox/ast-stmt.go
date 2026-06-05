@@ -6,6 +6,7 @@ type StmtVisitor[R any] interface {
 	VisitBlockStmt(stmt BlockStmt) (R, error)
 	VisitBreakStmt(stmt BreakStmt) (R, error)
 	VisitExpressionStmt(stmt ExpressionStmt) (R, error)
+	VisitFunctionStmt(stmt FunctionStmt) (R, error)
 	VisitIfStmt(stmt IfStmt) (R, error)
 	VisitPrintStmt(stmt PrintStmt) (R, error)
 	VisitVarStmt(stmt VarStmt) (R, error)
@@ -51,6 +52,22 @@ type ExpressionStmtAcceptor[R any] ExpressionStmt
 
 func (e ExpressionStmtAcceptor[R]) accept(vis StmtVisitor[R]) (R, error) {
 	return vis.VisitExpressionStmt(ExpressionStmt(e))
+}
+
+type FunctionStmt struct {
+	Name Token
+	Params []Token
+	Body []Stmt
+}
+
+func (FunctionStmt) sKind() string {
+	return "FunctionStmt"
+}
+
+type FunctionStmtAcceptor[R any] FunctionStmt
+
+func (f FunctionStmtAcceptor[R]) accept(vis StmtVisitor[R]) (R, error) {
+	return vis.VisitFunctionStmt(FunctionStmt(f))
 }
 
 type IfStmt struct {
@@ -121,6 +138,8 @@ func asStmtAcceptor[R any](stmt Stmt) StmtAcceptor[R] {
 		return BreakStmtAcceptor[R](e)
 	case ExpressionStmt:
 		return ExpressionStmtAcceptor[R](e)
+	case FunctionStmt:
+		return FunctionStmtAcceptor[R](e)
 	case IfStmt:
 		return IfStmtAcceptor[R](e)
 	case PrintStmt:
