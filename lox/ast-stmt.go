@@ -9,6 +9,7 @@ type StmtVisitor[R any] interface {
 	VisitFunctionStmt(stmt FunctionStmt) (R, error)
 	VisitIfStmt(stmt IfStmt) (R, error)
 	VisitPrintStmt(stmt PrintStmt) (R, error)
+	VisitReturnStmt(stmt ReturnStmt) (R, error)
 	VisitVarStmt(stmt VarStmt) (R, error)
 	VisitWhileStmt(stmt WhileStmt) (R, error)
 }
@@ -28,6 +29,7 @@ func (b BlockStmtAcceptor[R]) accept(vis StmtVisitor[R]) (R, error) {
 }
 
 type BreakStmt struct {
+	Keyword Token
 }
 
 func (BreakStmt) sKind() string {
@@ -100,6 +102,21 @@ func (p PrintStmtAcceptor[R]) accept(vis StmtVisitor[R]) (R, error) {
 	return vis.VisitPrintStmt(PrintStmt(p))
 }
 
+type ReturnStmt struct {
+	Keyword Token
+	Value Expr
+}
+
+func (ReturnStmt) sKind() string {
+	return "ReturnStmt"
+}
+
+type ReturnStmtAcceptor[R any] ReturnStmt
+
+func (r ReturnStmtAcceptor[R]) accept(vis StmtVisitor[R]) (R, error) {
+	return vis.VisitReturnStmt(ReturnStmt(r))
+}
+
 type VarStmt struct {
 	Name Token
 	Initializer Expr
@@ -144,6 +161,8 @@ func asStmtAcceptor[R any](stmt Stmt) StmtAcceptor[R] {
 		return IfStmtAcceptor[R](e)
 	case PrintStmt:
 		return PrintStmtAcceptor[R](e)
+	case ReturnStmt:
+		return ReturnStmtAcceptor[R](e)
 	case VarStmt:
 		return VarStmtAcceptor[R](e)
 	case WhileStmt:

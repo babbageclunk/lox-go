@@ -9,7 +9,6 @@ import (
 
 type Interpreter struct {
 	globals, environment *Environment
-	breaking             bool
 }
 
 func NewInterpreter() Interpreter {
@@ -25,8 +24,17 @@ func NewInterpreter() Interpreter {
 
 func (i *Interpreter) Interpret(statements []Stmt) error {
 	for _, statement := range statements {
-		if err := i.Execute(statement); err != nil {
+		flow, err := i.Execute(statement)
+		if err != nil {
 			return err
+		}
+		switch stmt := flow.stmt.(type) {
+		case BreakStmt:
+			return newTokenError(
+				stmt.Keyword, "Break statement outside loop.")
+		case ReturnStmt:
+			return newTokenError(
+				stmt.Keyword, "Return statement outside function or method.")
 		}
 	}
 	return nil
@@ -232,109 +240,132 @@ func (i *Interpreter) Evaluate(expr Expr) (any, error) {
 	return AcceptExpr(expr, i)
 }
 
-func (i *Interpreter) Execute(stmt Stmt) error {
-	_, err := AcceptStmt(stmt, i)
-	return err
+func (i *Interpreter) Execute(stmt Stmt) (controlFlow, error) {
+	return AcceptStmt(stmt, i)
 }
 
-func (i *Interpreter) ExecuteBlock(statements []Stmt, env *Environment) error {
+func (i *Interpreter) ExecuteBlock(statements []Stmt, env *Environment) (controlFlow, error) {
 	prev := i.environment
 	defer func() {
 		i.environment = prev
 	}()
 	i.environment = env
 	for _, statement := range statements {
-		if err := i.Execute(statement); err != nil {
-			return err
+		flow, err := i.Execute(statement)
+		if err != nil {
+			return flowNone, err
 		}
-		if i.breaking {
-			return nil
+		if flow != flowNone {
+			return flow, nil
 		}
 	}
-	return nil
+	return flowNone, nil
 }
 
-type Void struct{}
-
-var void Void
-
-func (i *Interpreter) VisitBreakStmt(stmt BreakStmt) (Void, error) {
-	i.breaking = true
-	return void, nil
+type controlFlow struct {
+	stmt  Stmt
+	value any
 }
 
-func (i *Interpreter) VisitBlockStmt(stmt BlockStmt) (Void, error) {
-	return void, i.ExecuteBlock(stmt.Statements, NewNestedEnvironment(i.environment))
+var flowNone = controlFlow{}
+
+func (i *Interpreter) VisitBreakStmt(stmt BreakStmt) (controlFlow, error) {
+	return controlFlow{
+		stmt: stmt,
+	}, nil
 }
 
-func (i *Interpreter) VisitExpressionStmt(stmt ExpressionStmt) (Void, error) {
+func (i *Interpreter) VisitBlockStmt(stmt BlockStmt) (controlFlow, error) {
+	return i.ExecuteBlock(stmt.Statements, NewNestedEnvironment(i.environment))
+}
+
+func (i *Interpreter) VisitExpressionStmt(stmt ExpressionStmt) (controlFlow, error) {
 	if _, err := i.Evaluate(stmt.Expression); err != nil {
-		return void, err
+		return flowNone, err
 	}
-	return void, nil
+	return flowNone, nil
 }
 
-func (i *Interpreter) VisitFunctionStmt(stmt FunctionStmt) (Void, error) {
+func (i *Interpreter) VisitFunctionStmt(stmt FunctionStmt) (controlFlow, error) {
 	i.environment.define(stmt.Name.Lexeme, newFunction(stmt))
-	return void, nil
+	return flowNone, nil
 }
 
-func (i *Interpreter) VisitIfStmt(stmt IfStmt) (Void, error) {
+func (i *Interpreter) VisitIfStmt(stmt IfStmt) (controlFlow, error) {
 	value, err := i.Evaluate(stmt.Condition)
 	if err != nil {
-		return void, err
+		return flowNone, err
 	}
 	if i.isTruthy(value) {
-		return void, i.Execute(stmt.ThenBranch)
+		return i.Execute(stmt.ThenBranch)
 	} else if stmt.ElseBranch != nil {
-		return void, i.Execute(stmt.ElseBranch)
+		return i.Execute(stmt.ElseBranch)
 	}
-	return void, nil
+	return flowNone, nil
 }
 
-func (i *Interpreter) VisitPrintStmt(stmt PrintStmt) (Void, error) {
+func (i *Interpreter) VisitPrintStmt(stmt PrintStmt) (controlFlow, error) {
 	value, err := i.Evaluate(stmt.Expression)
 	if err != nil {
-		return void, err
+		return flowNone, err
 	}
 	fmt.Println(stringify(value))
-	return void, nil
+	return flowNone, nil
 }
 
-func (i *Interpreter) VisitVarStmt(stmt VarStmt) (Void, error) {
+func (i *Interpreter) VisitReturnStmt(stmt ReturnStmt) (controlFlow, error) {
+	var value any
+	if stmt.Value != nil {
+		var err error
+		value, err = i.Evaluate(stmt.Value)
+		if err != nil {
+			return flowNone, err
+		}
+	}
+	return controlFlow{
+		stmt:  stmt,
+		value: value,
+	}, nil
+
+}
+
+func (i *Interpreter) VisitVarStmt(stmt VarStmt) (controlFlow, error) {
 	var value any
 	if stmt.Initializer != nil {
 		var err error
 		value, err = i.Evaluate(stmt.Initializer)
 		if err != nil {
-			return void, err
+			return flowNone, err
 		}
 	} else {
 		value = uninitialised
 	}
 
 	i.environment.define(stmt.Name.Lexeme, value)
-	return void, nil
+	return flowNone, nil
 }
 
-func (i *Interpreter) VisitWhileStmt(stmt WhileStmt) (Void, error) {
+func (i *Interpreter) VisitWhileStmt(stmt WhileStmt) (controlFlow, error) {
 	for {
 		val, err := i.Evaluate(stmt.Condition)
 		if err != nil {
-			return void, err
+			return flowNone, err
 		}
 		if !i.isTruthy(val) {
 			break
 		}
-		if err := i.Execute(stmt.Body); err != nil {
-			return void, err
+		flow, err := i.Execute(stmt.Body)
+		if err != nil {
+			return flowNone, err
 		}
-		if i.breaking {
-			i.breaking = false
-			break
+		switch flow.stmt.(type) {
+		case BreakStmt:
+			return flowNone, nil // Consume the break here.
+		case ReturnStmt:
+			return flow, nil // Allow return value to propagate up.
 		}
 	}
-	return void, nil
+	return flowNone, nil
 }
 
 func (i *Interpreter) VisitAssignExpr(expr AssignExpr) (any, error) {
@@ -350,4 +381,4 @@ func (i *Interpreter) VisitAssignExpr(expr AssignExpr) (any, error) {
 }
 
 var _ ExprVisitor[any] = &Interpreter{}
-var _ StmtVisitor[Void] = &Interpreter{}
+var _ StmtVisitor[controlFlow] = &Interpreter{}

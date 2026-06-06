@@ -73,26 +73,28 @@ func (p *Parser) declaration() (result Stmt) {
 func (p *Parser) statement() Stmt {
 	switch {
 	case p.match(TokenBreak):
-		p.consume(TokenSemicolon, "Expect ';' after 'break'.")
-		return BreakStmt{}
-
+		return p.breakStatement()
 	case p.match(TokenFor):
 		return p.forStatement()
-
 	case p.match(TokenIf):
 		return p.ifStatement()
-
 	case p.match(TokenPrint):
 		return p.printStatement()
-
+	case p.match(TokenReturn):
+		return p.returnStatement()
 	case p.match(TokenWhile):
 		return p.whileStatement()
-
 	case p.match(TokenLeftBrace):
 		return BlockStmt{Statements: p.block()}
 	default:
 		return p.expressionStatement()
 	}
+}
+
+func (p *Parser) breakStatement() Stmt {
+	token := p.previous()
+	p.consume(TokenSemicolon, "Expect ';' after 'break'.")
+	return BreakStmt{Keyword: token}
 }
 
 func (p *Parser) forStatement() Stmt {
@@ -171,6 +173,19 @@ func (p *Parser) varDeclaration() Stmt {
 
 	p.consume(TokenSemicolon, "Expect ';' after variable declaration.")
 	return VarStmt{Name: name, Initializer: initializer}
+}
+
+func (p *Parser) returnStatement() Stmt {
+	keyword := p.previous()
+	var value Expr
+	if !p.check(TokenSemicolon) {
+		value = p.expression()
+	}
+	p.consume(TokenSemicolon, "Expect ';' after return value.")
+	return ReturnStmt{
+		Keyword: keyword,
+		Value:   value,
+	}
 }
 
 func (p *Parser) whileStatement() Stmt {
