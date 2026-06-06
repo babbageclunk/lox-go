@@ -12,6 +12,9 @@ type Parser struct {
 	tokens  []Token
 	current int
 	err     error
+
+	loops     int
+	functions int
 }
 
 func NewParser(tokens []Token) *Parser {
@@ -92,6 +95,9 @@ func (p *Parser) statement() Stmt {
 }
 
 func (p *Parser) breakStatement() Stmt {
+	if p.loops == 0 {
+		panic(p.error(p.previous(), "Break outside of loop."))
+	}
 	token := p.previous()
 	p.consume(TokenSemicolon, "Expect ';' after 'break'.")
 	return BreakStmt{Keyword: token}
@@ -121,6 +127,12 @@ func (p *Parser) forStatement() Stmt {
 		increment = p.expression()
 	}
 	p.consume(TokenRightParen, "Expect ')' after for clauses.")
+
+	p.loops++
+	defer func() {
+		p.loops--
+	}()
+
 	body := p.statement()
 
 	if increment != nil {
@@ -176,6 +188,9 @@ func (p *Parser) varDeclaration() Stmt {
 }
 
 func (p *Parser) returnStatement() Stmt {
+	if p.functions == 0 {
+		panic(p.error(p.previous(), "Return outside of function or method."))
+	}
 	keyword := p.previous()
 	var value Expr
 	if !p.check(TokenSemicolon) {
@@ -192,6 +207,12 @@ func (p *Parser) whileStatement() Stmt {
 	p.consume(TokenLeftParen, "Expect '(' after 'while'.")
 	condition := p.expression()
 	p.consume(TokenRightParen, "Expect ')' after condition.")
+
+	p.loops++
+	defer func() {
+		p.loops--
+	}()
+
 	body := p.statement()
 	return WhileStmt{
 		Condition: condition,
@@ -232,6 +253,15 @@ func (p *Parser) function(kind string) FunctionStmt {
 	p.consume(TokenRightParen, "Expect ')' after parameters.")
 
 	p.consume(TokenLeftBrace, "Expect '{' before %s body.", kind)
+
+	p.functions++
+	oldLoops := p.loops
+	p.loops = 0
+	defer func() {
+		p.functions--
+		p.loops = oldLoops
+	}()
+
 	body := p.block()
 	return FunctionStmt{
 		Name:   name,

@@ -28,6 +28,8 @@ func (i *Interpreter) Interpret(statements []Stmt) error {
 		if err != nil {
 			return err
 		}
+		// The parser prevents this situation, but keep the check as a
+		// backstop for manually constructed ASTs.
 		switch stmt := flow.stmt.(type) {
 		case BreakStmt:
 			return newTokenError(
