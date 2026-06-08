@@ -1,0 +1,12 @@
+fun solve(n, from, to, using) {
+    if (n == 0) {
+        return 0;
+    }
+    var moves = solve(n-1, from, using, to);
+    print from + " -> " + to;
+    moves = moves + 1;
+    moves = moves + solve(n-1, using, to, from);
+    return moves;
+}
+
+print solve(5, "A", "B", "C");
