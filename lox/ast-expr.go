@@ -6,6 +6,7 @@ type ExprVisitor[R any] interface {
 	VisitAssignExpr(expr AssignExpr) (R, error)
 	VisitBinaryExpr(expr BinaryExpr) (R, error)
 	VisitCallExpr(expr CallExpr) (R, error)
+	VisitFunctionExpr(expr FunctionExpr) (R, error)
 	VisitGroupingExpr(expr GroupingExpr) (R, error)
 	VisitLiteralExpr(expr LiteralExpr) (R, error)
 	VisitLogicalExpr(expr LogicalExpr) (R, error)
@@ -58,6 +59,21 @@ type CallExprAcceptor[R any] CallExpr
 
 func (c CallExprAcceptor[R]) accept(vis ExprVisitor[R]) (R, error) {
 	return vis.VisitCallExpr(CallExpr(c))
+}
+
+type FunctionExpr struct {
+	Params []Token
+	Body []Stmt
+}
+
+func (FunctionExpr) eKind() string {
+	return "FunctionExpr"
+}
+
+type FunctionExprAcceptor[R any] FunctionExpr
+
+func (f FunctionExprAcceptor[R]) accept(vis ExprVisitor[R]) (R, error) {
+	return vis.VisitFunctionExpr(FunctionExpr(f))
 }
 
 type GroupingExpr struct {
@@ -141,6 +157,8 @@ func asExprAcceptor[R any](expr Expr) ExprAcceptor[R] {
 		return BinaryExprAcceptor[R](e)
 	case CallExpr:
 		return CallExprAcceptor[R](e)
+	case FunctionExpr:
+		return FunctionExprAcceptor[R](e)
 	case GroupingExpr:
 		return GroupingExprAcceptor[R](e)
 	case LiteralExpr:

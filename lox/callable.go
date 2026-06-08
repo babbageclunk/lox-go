@@ -37,27 +37,29 @@ func (b builtin) String() string {
 var _ callable = builtin{}
 
 type function struct {
-	declaration FunctionStmt
-	closure     *Environment
+	name    string
+	expr    FunctionExpr
+	closure *Environment
 }
 
-func newFunction(declaration FunctionStmt, closure *Environment) function {
+func newFunction(name string, expr FunctionExpr, closure *Environment) function {
 	return function{
-		declaration: declaration,
-		closure:     closure,
+		name:    name,
+		expr:    expr,
+		closure: closure,
 	}
 }
 
 func (f function) arity() int {
-	return len(f.declaration.Params)
+	return len(f.expr.Params)
 }
 
 func (f function) call(interpreter *Interpreter, args []any) (any, error) {
 	environment := NewNestedEnvironment(f.closure)
-	for i, param := range f.declaration.Params {
+	for i, param := range f.expr.Params {
 		environment.define(param.Lexeme, args[i])
 	}
-	err := interpreter.ExecuteBlock(f.declaration.Body, environment)
+	err := interpreter.ExecuteBlock(f.expr.Body, environment)
 	if ret, ok := errors.AsType[returnControlFlow](err); ok {
 		return ret.value, nil
 	} else if brk, ok := errors.AsType[breakControlFlow](err); ok {
@@ -71,7 +73,10 @@ func (f function) call(interpreter *Interpreter, args []any) (any, error) {
 }
 
 func (f function) String() string {
-	return fmt.Sprintf("<fn %s>", f.declaration.Name.Lexeme)
+	if f.name == "" {
+		return "<anon fn>"
+	}
+	return fmt.Sprintf("<fn %s>", f.name)
 }
 
 var _ callable = function{}

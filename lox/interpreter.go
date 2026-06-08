@@ -125,6 +125,10 @@ func (i *Interpreter) isEqual(a, b any) bool {
 	return a == b
 }
 
+func (i *Interpreter) VisitFunctionExpr(expr FunctionExpr) (any, error) {
+	return newFunction("", expr, i.environment), nil
+}
+
 func (i *Interpreter) VisitGroupingExpr(expr GroupingExpr) (any, error) {
 	return i.Evaluate(expr.Expression)
 }
@@ -279,7 +283,8 @@ func (i *Interpreter) VisitExpressionStmt(stmt ExpressionStmt) (Void, error) {
 }
 
 func (i *Interpreter) VisitFunctionStmt(stmt FunctionStmt) (Void, error) {
-	i.environment.define(stmt.Name.Lexeme, newFunction(stmt, i.environment))
+	name := stmt.Name.Lexeme
+	i.environment.define(name, newFunction(name, stmt.Function, i.environment))
 	return void, nil
 }
 

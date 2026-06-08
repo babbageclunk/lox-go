@@ -58,8 +58,7 @@ func (e ExpressionStmtAcceptor[R]) accept(vis StmtVisitor[R]) (R, error) {
 
 type FunctionStmt struct {
 	Name Token
-	Params []Token
-	Body []Stmt
+	Function FunctionExpr
 }
 
 func (FunctionStmt) sKind() string {

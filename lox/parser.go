@@ -32,6 +32,13 @@ func (p *Parser) parse() (statements []Stmt, err error) {
 }
 
 func (p *Parser) expression() Expr {
+	return p.functionExpression()
+}
+
+func (p *Parser) functionExpression() Expr {
+	if p.match(TokenFun) && p.match(TokenLeftParen) {
+		return p.functionTail("function")
+	}
 	return p.assignment()
 }
 
@@ -238,6 +245,13 @@ func (p *Parser) expressionStatement() Stmt {
 func (p *Parser) function(kind string) FunctionStmt {
 	name := p.consume(TokenIdentifier, "Expect %s name.", kind)
 	p.consume(TokenLeftParen, "Expect '(' after %s name.", kind)
+	return FunctionStmt{
+		Name:     name,
+		Function: p.functionTail(kind),
+	}
+}
+
+func (p *Parser) functionTail(kind string) FunctionExpr {
 	var parameters []Token
 	if !p.check(TokenRightParen) {
 		for {
@@ -263,8 +277,7 @@ func (p *Parser) function(kind string) FunctionStmt {
 	}()
 
 	body := p.block()
-	return FunctionStmt{
-		Name:   name,
+	return FunctionExpr{
 		Params: parameters,
 		Body:   body,
 	}
