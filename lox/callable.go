@@ -1,6 +1,9 @@
 package lox
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 type callable interface {
 	call(*Interpreter, []any) (any, error)
@@ -54,15 +57,15 @@ func (f function) call(interpreter *Interpreter, args []any) (any, error) {
 	for i, param := range f.declaration.Params {
 		environment.define(param.Lexeme, args[i])
 	}
-	flow, err := interpreter.ExecuteBlock(f.declaration.Body, environment)
-	if err != nil {
+	err := interpreter.ExecuteBlock(f.declaration.Body, environment)
+	if ret, ok := errors.AsType[returnControlFlow](err); ok {
+		return ret.value, nil
+	} else if brk, ok := errors.AsType[breakControlFlow](err); ok {
+		// We shouldn't let a break propagate across a function call boundary.
+		// Convert it into a regular error rather than a control-flow one.
+		return nil, newTokenError(brk.stmt.Keyword, "Break statement outside loop.")
+	} else if err != nil {
 		return nil, err
-	}
-	switch stmt := flow.stmt.(type) {
-	case ReturnStmt:
-		return flow.value, nil
-	case BreakStmt:
-		return nil, newTokenError(stmt.Keyword, "Break statement outside loop.")
 	}
 	return nil, nil
 }
