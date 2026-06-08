@@ -289,7 +289,7 @@ func (i *Interpreter) VisitExpressionStmt(stmt ExpressionStmt) (controlFlow, err
 }
 
 func (i *Interpreter) VisitFunctionStmt(stmt FunctionStmt) (controlFlow, error) {
-	i.environment.define(stmt.Name.Lexeme, newFunction(stmt))
+	i.environment.define(stmt.Name.Lexeme, newFunction(stmt, i.environment))
 	return flowNone, nil
 }
 

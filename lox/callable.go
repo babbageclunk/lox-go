@@ -35,10 +35,14 @@ var _ callable = builtin{}
 
 type function struct {
 	declaration FunctionStmt
+	closure     *Environment
 }
 
-func newFunction(declaration FunctionStmt) function {
-	return function{declaration: declaration}
+func newFunction(declaration FunctionStmt, closure *Environment) function {
+	return function{
+		declaration: declaration,
+		closure:     closure,
+	}
 }
 
 func (f function) arity() int {
@@ -46,7 +50,7 @@ func (f function) arity() int {
 }
 
 func (f function) call(interpreter *Interpreter, args []any) (any, error) {
-	environment := NewNestedEnvironment(interpreter.globals)
+	environment := NewNestedEnvironment(f.closure)
 	for i, param := range f.declaration.Params {
 		environment.define(param.Lexeme, args[i])
 	}
